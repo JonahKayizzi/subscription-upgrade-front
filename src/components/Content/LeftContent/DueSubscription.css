@@ -1,0 +1,59 @@
+.due-subscription {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  width: 100%;
+  color: #f3f2f6;
+}
+
+.due-subscription h2 {
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.due-subscription-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  width: 100%;
+  padding: 20px;
+  background-color: #362548;
+  border-radius: 5px;
+  color: #dcd9de;
+}
+
+.due-subscription p {
+  font-size: 1rem;
+}
+
+.due-subscription-content-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin-top: 10px;
+}
+
+.subscriber.logo {
+  width: 10%;
+  border-radius: 50%;
+}
+
+.due-subscription button {
+  margin-top: 20px;
+  padding: 10px 20px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fff;
+  background-color: #007bff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.due-subscription button:hover {
+  background-color: #0056b3;
+}
+

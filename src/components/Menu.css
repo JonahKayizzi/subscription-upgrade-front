@@ -1,0 +1,10 @@
+.main-menu {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 20px;
+  background-color: #332048;
+  color: #fff;
+  min-height: 100vh;
+  border-top-left-radius: 10px;
+}
