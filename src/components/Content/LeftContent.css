@@ -1,0 +1,6 @@
+.left-content {
+  display: flex;
+  width: 60%;
+  padding: .1em 2em;
+  flex-direction: column;
+}

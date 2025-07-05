@@ -1,0 +1,18 @@
+:root {
+  --color-bg: #1a1333;
+  --color-bg-card: #231942;
+  --color-accent: #f7b801;
+  --color-accent2: #a259f7;
+  --color-text: #fff;
+  --color-text-muted: #bdbdbd;
+  --color-border: #2d2156;
+  --color-error: #ff4d4f;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: 'Nunito', 'Segoe UI', Arial, sans-serif;
+  margin: 0;
+  min-height: 100vh;
+} 
