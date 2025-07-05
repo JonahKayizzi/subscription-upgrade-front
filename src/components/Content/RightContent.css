@@ -1,0 +1,5 @@
+.right-content {
+  display: flex;
+  width: 36%;
+  flex-direction: column;
+}
