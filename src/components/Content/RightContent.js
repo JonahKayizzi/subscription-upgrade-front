@@ -1,9 +1,10 @@
 import './RightContent.css';
+import SubscriptionStatistics from './RightContent/SubscriptionStatistics';
 
 const RightContent = () => {
     return (
         <div className='right-content'>
-            <h1>Right Content</h1>
+            < SubscriptionStatistics />
         </div>
     );
 };

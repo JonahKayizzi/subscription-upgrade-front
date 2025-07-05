@@ -5,7 +5,7 @@ const DateContainer = () => {
 
     return (
         <div className='date'>
-            <h1>Todays Date</h1>
+            <h1>{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</h1>
         </div>
     );
 };
