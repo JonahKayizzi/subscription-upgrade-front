@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
-import { useLoginMutation } from '../api/apiSlice';
-import { useDispatch } from 'react-redux';
-import { setCredentials } from '../features/auth/authSlice';
 import styled from 'styled-components';
+// import { useRegisterMutation } from '../api/apiSlice'; // To be implemented
 
 const Form = styled.form`
   max-width: 340px;
@@ -51,25 +49,40 @@ const ErrorMsg = styled.div`
   text-align: center;
 `;
 
-export default function Login() {
+const SuccessMsg = styled.div`
+  color: #22c55e;
+  margin-top: 4px;
+  text-align: center;
+`;
+
+export default function Register() {
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [login, { isLoading, error }] = useLoginMutation();
-  const dispatch = useDispatch();
+  // const [register, { isLoading, error }] = useRegisterMutation();
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    try {
-      const result = await login({ email, password }).unwrap();
-      dispatch(setCredentials({ token: result.token }));
-      // Optionally redirect or show success
-    } catch (err) {
-      // Handle error
+    setError('');
+    setSuccess(false);
+    if (!name || !email || !password) {
+      setError('Please fill in all fields.');
+      return;
     }
+    // TODO: Call registration API
+    setSuccess(true);
   };
 
   return (
     <Form onSubmit={handleSubmit}>
+      <Input
+        value={name}
+        onChange={e => setName(e.target.value)}
+        placeholder="Full Name"
+        autoComplete="name"
+      />
       <Input
         value={email}
         onChange={e => setEmail(e.target.value)}
@@ -82,10 +95,11 @@ export default function Login() {
         onChange={e => setPassword(e.target.value)}
         type="password"
         placeholder="Password"
-        autoComplete="current-password"
+        autoComplete="new-password"
       />
-      <Button type="submit" disabled={isLoading}>Login</Button>
-      {error && <ErrorMsg>Login failed</ErrorMsg>}
+      <Button type="submit">Register</Button>
+      {error && <ErrorMsg>{error}</ErrorMsg>}
+      {success && <SuccessMsg>Registration successful!</SuccessMsg>}
     </Form>
   );
 } 
