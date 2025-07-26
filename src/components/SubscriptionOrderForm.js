@@ -7,22 +7,25 @@ import Login from './Login';
 import Register from './Register';
 
 const Card = styled.div`
-  background: var(--color-background-card);
+  background: #1e293b;
   border-radius: 16px;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.2);
   padding: 32px 32px 24px 32px;
   min-width: 420px;
   max-width: 700px;
   margin: 0 auto;
-  color: var(--color-text);
+  color: #ffffff;
+  border: 1px solid #334155;
 `;
 
 const Title = styled.h2`
   margin: 0 0 24px 0;
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: var(--color-primary, #3B82F6);
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #ffffff;
   text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 `;
 
 const FormGrid = styled.div`
@@ -36,22 +39,33 @@ const FormGroup = styled.div`
   flex-direction: column;
   margin-bottom: 16px;
   label {
-    font-size: 0.95rem;
-    color: var(--color-text-muted);
+    font-size: 0.9rem;
+    color: #cbd5e1;
     margin-bottom: 6px;
     font-weight: 500;
   }
   input, select {
-    padding: 10px 12px;
-    border: 1px solid var(--color-border);
-    border-radius: 6px;
-    background: var(--color-background);
-    color: var(--color-text);
-    font-size: 1rem;
+    padding: 12px 16px;
+    border: 1px solid #475569;
+    border-radius: 8px;
+    background: #2d3a4b;
+    color: #ffffff;
+    font-size: 0.95rem;
+    transition: border-color 0.2s ease;
     &:focus {
       outline: none;
-      border-color: var(--color-accent2);
-      box-shadow: 0 0 0 2px var(--color-accent2, rgba(162, 89, 247, 0.15));
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+    }
+    &::placeholder {
+      color: #94a3b8;
+    }
+  }
+  select {
+    color: #ffffff;
+    option {
+      background: #2d3a4b;
+      color: #ffffff;
     }
   }
 `;
@@ -64,9 +78,91 @@ const ButtonRow = styled.div`
 `;
 
 const ErrorText = styled.div`
-  color: var(--color-error, #e53e3e);
+  color: #ef4444;
   margin-bottom: 12px;
   text-align: center;
+  font-size: 0.9rem;
+`;
+
+const SuccessText = styled.div`
+  color: #10b981;
+  margin-bottom: 12px;
+  text-align: center;
+  font-size: 0.9rem;
+  font-weight: 500;
+`;
+
+const CheckboxGroup = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  
+  input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: #3b82f6;
+    border: 1px solid #cbd5e1;
+    border-radius: 3px;
+    background: transparent;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    position: relative;
+    cursor: pointer;
+    
+    &:checked {
+      background: #3b82f6;
+      border-color: #3b82f6;
+      
+      &::after {
+        content: '✓';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: white;
+        font-size: 12px;
+        font-weight: bold;
+      }
+    }
+    
+    &:focus {
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+    }
+  }
+  
+  label {
+    font-size: 0.9rem;
+    color: #cbd5e1;
+    margin: 0;
+    cursor: pointer;
+  }
+`;
+
+const RequiredField = styled.span`
+  color: #ef4444;
+  margin-left: 4px;
+`;
+
+const FormSection = styled.div`
+  margin-bottom: 24px;
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+`;
+
+const SectionTitle = styled.h3`
+  font-size: 1rem;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0 0 16px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  border-bottom: 1px solid #475569;
+  padding-bottom: 8px;
 `;
 
 const PUBLICATIONS = [
@@ -131,73 +227,81 @@ export default function SubscriptionOrderForm() {
     <Card>
       <Title>Order Form for Renewal of Subscription (2025)</Title>
       <form onSubmit={handleSubmit} onMouseEnter={handleFormMouseEnter}>
-        <FormGrid>
+        <FormSection>
+          <SectionTitle>Delivery Information</SectionTitle>
+          <FormGrid>
+            <FormGroup>
+              <label>Delivery Name<RequiredField>*</RequiredField></label>
+              <input name="delivery_name" value={form.delivery_name} onChange={handleChange} required />
+            </FormGroup>
+            <FormGroup>
+              <label>Billing Name</label>
+              <input name="billing_name" value={form.billing_name} onChange={handleChange} />
+            </FormGroup>
+          </FormGrid>
+          <FormGrid>
+            <FormGroup>
+              <label>Delivery Address<RequiredField>*</RequiredField></label>
+              <input name="delivery_address" value={form.delivery_address} onChange={handleChange} required />
+            </FormGroup>
+            <FormGroup>
+              <label>Billing Address</label>
+              <input name="billing_address" value={form.billing_address} onChange={handleChange} />
+            </FormGroup>
+          </FormGrid>
+          <FormGrid>
+            <FormGroup>
+              <label>Delivery Tel</label>
+              <input name="delivery_tel" value={form.delivery_tel} onChange={handleChange} type="tel" />
+            </FormGroup>
+            <FormGroup>
+              <label>Billing Tel</label>
+              <input name="billing_tel" value={form.billing_tel} onChange={handleChange} type="tel" />
+            </FormGroup>
+          </FormGrid>
+          <FormGrid>
+            <FormGroup>
+              <label>Delivery Fax</label>
+              <input name="delivery_fax" value={form.delivery_fax} onChange={handleChange} />
+            </FormGroup>
+            <FormGroup>
+              <label>Billing Fax</label>
+              <input name="billing_fax" value={form.billing_fax} onChange={handleChange} />
+            </FormGroup>
+          </FormGrid>
+        </FormSection>
+
+        <FormSection>
+          <SectionTitle>Order Details</SectionTitle>
           <FormGroup>
-            <label>Delivery Name *</label>
-            <input name="delivery_name" value={form.delivery_name} onChange={handleChange} required />
+            <label>Publication<RequiredField>*</RequiredField></label>
+            <select name="publication" value={form.publication} onChange={handleChange} required>
+              <option value="">Select publication</option>
+              {PUBLICATIONS.map(pub => (
+                <option key={pub.value} value={pub.value}>{pub.label}</option>
+              ))}
+            </select>
           </FormGroup>
-          <FormGroup>
-            <label>Billing Name</label>
-            <input name="billing_name" value={form.billing_name} onChange={handleChange} />
-          </FormGroup>
-          <FormGroup>
-            <label>Delivery Address *</label>
-            <input name="delivery_address" value={form.delivery_address} onChange={handleChange} required />
-          </FormGroup>
-          <FormGroup>
-            <label>Billing Address</label>
-            <input name="billing_address" value={form.billing_address} onChange={handleChange} />
-          </FormGroup>
-          <FormGroup>
-            <label>Delivery Tel</label>
-            <input name="delivery_tel" value={form.delivery_tel} onChange={handleChange} />
-          </FormGroup>
-          <FormGroup>
-            <label>Billing Tel</label>
-            <input name="billing_tel" value={form.billing_tel} onChange={handleChange} />
-          </FormGroup>
-          <FormGroup>
-            <label>Delivery Fax</label>
-            <input name="delivery_fax" value={form.delivery_fax} onChange={handleChange} />
-          </FormGroup>
-          <FormGroup>
-            <label>Billing Fax</label>
-            <input name="billing_fax" value={form.billing_fax} onChange={handleChange} />
-          </FormGroup>
-          <FormGroup>
-            <label>Delivery Email *</label>
-            <input name="delivery_email" value={form.delivery_email} onChange={handleChange} required type="email" />
-          </FormGroup>
-          <FormGroup>
-            <label>Billing Email</label>
-            <input name="billing_email" value={form.billing_email} onChange={handleChange} type="email" />
-          </FormGroup>
-        </FormGrid>
-        <FormGroup>
-          <label>Publication *</label>
-          <select name="publication" value={form.publication} onChange={handleChange} required>
-            <option value="">Select publication</option>
-            {PUBLICATIONS.map(pub => (
-              <option key={pub.value} value={pub.value}>{pub.label}</option>
-            ))}
-          </select>
-        </FormGroup>
-        <FormGrid>
-          <FormGroup>
-            <label>No. of Copies *</label>
-            <input name="num_copies" value={form.num_copies} onChange={handleChange} required type="number" min="1" />
-          </FormGroup>
-          <FormGroup>
-            <label>Reciprocal basis</label>
-            <input name="reciprocal" type="checkbox" checked={form.reciprocal} onChange={handleChange} />
-          </FormGroup>
-          <FormGroup>
-            <label>On Payment</label>
-            <input name="on_payment" type="checkbox" checked={form.on_payment} onChange={handleChange} />
-          </FormGroup>
-        </FormGrid>
+          <FormGrid>
+            <FormGroup>
+              <label>No. of Copies<RequiredField>*</RequiredField></label>
+              <input name="num_copies" value={form.num_copies} onChange={handleChange} required type="number" min="1" />
+            </FormGroup>
+          </FormGrid>
+          <FormGrid>
+            <CheckboxGroup>
+              <input name="reciprocal" type="checkbox" checked={form.reciprocal} onChange={handleChange} />
+              <label>Reciprocal basis</label>
+            </CheckboxGroup>
+            <CheckboxGroup>
+              <input name="on_payment" type="checkbox" checked={form.on_payment} onChange={handleChange} />
+              <label>On Payment</label>
+            </CheckboxGroup>
+          </FormGrid>
+        </FormSection>
+
         {error && <ErrorText>{error}</ErrorText>}
-        {success && <div style={{ color: 'var(--color-success)' }}>Order submitted successfully!</div>}
+        {success && <SuccessText>Order submitted successfully!</SuccessText>}
         <ButtonRow>
           <Button type="submit">Submit Order</Button>
         </ButtonRow>
