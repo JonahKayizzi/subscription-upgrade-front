@@ -61,7 +61,10 @@ export default function Login() {
     e.preventDefault();
     try {
       const result = await login({ email, password }).unwrap();
-      dispatch(setCredentials({ token: result.token }));
+      dispatch(setCredentials({ 
+        token: result.token,
+        user: result.user 
+      }));
       // Optionally redirect or show success
     } catch (err) {
       // Handle error

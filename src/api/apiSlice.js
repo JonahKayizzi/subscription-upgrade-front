@@ -22,6 +22,13 @@ export const apiSlice = createApi({
         body: credentials,
       }),
     }),
+    register: builder.mutation({
+      query: (userData) => ({
+        url: '/auth/register',
+        method: 'POST',
+        body: userData,
+      }),
+    }),
     // Subscribers
     getSubscribers: builder.query({
       query: () => '/subscribers',
@@ -87,11 +94,64 @@ export const apiSlice = createApi({
         params
       })
     }),
+    // Subscriber dashboard
+    getSubscriberDashboard: builder.query({
+      query: () => ({
+        url: '/subscriber/dashboard'
+      })
+    }),
+    // Request invoice
+    requestInvoice: builder.mutation({
+      query: (subscriptionId) => ({
+        url: '/subscriber/request-invoice',
+        method: 'POST',
+        body: { subscriptionId }
+      })
+    }),
+    // Upload receipt
+    uploadReceipt: builder.mutation({
+      query: ({ subscriptionId, receiptFile }) => {
+        const formData = new FormData();
+        formData.append('subscriptionId', subscriptionId);
+        formData.append('receiptFile', receiptFile);
+        
+        return {
+          url: '/subscriber/upload-receipt',
+          method: 'POST',
+          body: formData
+        };
+      }
+    }),
+    // Submit subscription order
+    submitSubscriptionOrder: builder.mutation({
+      query: ({ subscriptionData, orderFormFile }) => {
+        const formData = new FormData();
+        formData.append('subscriptionData', JSON.stringify(subscriptionData));
+        if (orderFormFile) {
+          formData.append('orderFormFile', orderFormFile);
+        }
+        
+        return {
+          url: '/subscriber/submit-order',
+          method: 'POST',
+          body: formData
+        };
+      }
+    }),
+    // Update subscriber information
+    updateSubscriberInfo: builder.mutation({
+      query: (updateData) => ({
+        url: '/subscriber/update-info',
+        method: 'PUT',
+        body: updateData
+      })
+    }),
   }),
 });
 
 export const {
   useLoginMutation,
+  useRegisterMutation,
   useGetSubscribersQuery,
   useSearchSubscribersQuery,
   useGetSubscriberQuery,
@@ -104,4 +164,9 @@ export const {
   useUpdateSubscriptionMutation,
   useDeleteSubscriptionMutation,
   useGetDashboardStatsQuery,
+  useGetSubscriberDashboardQuery,
+  useRequestInvoiceMutation,
+  useUploadReceiptMutation,
+  useSubmitSubscriptionOrderMutation,
+  useUpdateSubscriberInfoMutation,
 } = apiSlice; 

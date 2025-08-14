@@ -175,6 +175,13 @@ export default function SubscriptionOrderForm() {
   const isAuthenticated = useSelector(state => !!state.auth.token);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState('login'); // 'login' or 'register'
+  
+  const handleRegistrationSuccess = (result) => {
+    // Close the modal and proceed with the order
+    setShowAuthModal(false);
+    setAuthMode('login');
+    // The user is now authenticated, so they can submit the order
+  };
   const [form, setForm] = useState({
     delivery_name: '',
     delivery_address: '',
@@ -311,7 +318,7 @@ export default function SubscriptionOrderForm() {
           <h3 style={{ textAlign: 'center', marginBottom: 16 }}>
             {authMode === 'login' ? 'Login to Continue' : 'Register to Continue'}
           </h3>
-          {authMode === 'login' ? <Login /> : <Register />}
+          {authMode === 'login' ? <Login /> : <Register onSuccess={handleRegistrationSuccess} />}
           <div style={{ textAlign: 'center', marginTop: 16 }}>
             {authMode === 'login' ? (
               <>
