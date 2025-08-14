@@ -1,13 +1,17 @@
+import React from 'react';
 import './App.css';
 import Sidebar from './components/Sidebar';
 import Topbar from './components/Topbar';
 import Dashboard from './components/Dashboard';
+import SubscriberDashboard from './components/SubscriberDashboard';
 import SubscribersTable from './components/SubscribersTable';
 import SubscriptionForm from './components/SubscriptionForm';
 import SubscriptionOrderForm from './components/SubscriptionOrderForm';
 // import AddSubscriptionPage from './components/AddSubscriptionPage';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { Routes, Route } from 'react-router-dom';
+import { logout } from './features/auth/authSlice';
+import { checkSessionTimeout } from './utils/sessionUtils';
 import styled from 'styled-components';
 import { FaMap, FaBook, FaChartBar, FaEnvelope, FaPhone, FaDatabase, FaCheckCircle, FaUserShield, FaRocket, FaCloud, FaRegFileAlt, FaCompactDisc, FaGlobe, FaMapMarkerAlt, FaFileAlt, FaExclamationTriangle, FaClipboardList } from 'react-icons/fa';
 const LandingContainer = styled.div`
@@ -669,6 +673,30 @@ const BreakdownCell = styled.span`
 
 function App() {
   const token = useSelector(state => state.auth.token);
+  const user = useSelector(state => state.auth.user);
+  const dispatch = useDispatch();
+
+  // Check if user is admin (***REMOVED***)
+  const isAdmin = user?.email === '***REMOVED***';
+
+  // Auto-logout on session timeout
+  React.useEffect(() => {
+    if (!token) return;
+
+    const checkSession = () => {
+      if (checkSessionTimeout(token)) {
+        dispatch(logout());
+      }
+    };
+
+    // Check every minute
+    const interval = setInterval(checkSession, 60000);
+    
+    // Initial check
+    checkSession();
+
+    return () => clearInterval(interval);
+  }, [token, dispatch]);
 
   if (!token) {
     return (
@@ -907,10 +935,14 @@ function App() {
       <div className="main-content">
         <Topbar />
         <Routes>
-          <Route path="/" element={<Dashboard />} />
+          <Route path="/" element={isAdmin ? <Dashboard /> : <SubscriberDashboard />} />
+          {isAdmin && (
+            <>
           <Route path="/subscribers" element={<SubscribersTable />} />
           <Route path="/subscriber/:id/add-subscription" element={<SubscriptionForm />} />
           <Route path="/subscriber/:id/edit-subscription/:subscriptionId" element={<SubscriptionForm />} />
+            </>
+          )}
           {/* <Route path="/add-subscription" element={<AddSubscriptionPage />} /> */}
         </Routes>
       </div>
