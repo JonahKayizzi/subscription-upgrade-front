@@ -108,12 +108,46 @@ export const apiSlice = createApi({
         body: { subscriptionId }
       })
     }),
+    // Mark invoice as not required
+    markInvoiceNotRequired: builder.mutation({
+      query: (subscriptionId) => ({
+        url: '/subscriber/mark-invoice-not-required',
+        method: 'POST',
+        body: { subscriptionId }
+      })
+    }),
+    // Upload invoice (admin)
+    uploadInvoice: builder.mutation({
+      query: ({ subscriptionId, invoiceFile, invoiceNumber }) => {
+        const formData = new FormData();
+        formData.append('subscriptionId', subscriptionId);
+        formData.append('invoiceFile', invoiceFile);
+        formData.append('invoiceNumber', invoiceNumber);
+        
+        return {
+          url: '/admin/upload-invoice',
+          method: 'POST',
+          body: formData
+        };
+      }
+    }),
+    // Verify receipt and activate subscription (admin)
+    verifyReceipt: builder.mutation({
+      query: ({ subscriptionId, receiptVerified, subscriptionDetails }) => ({
+        url: '/admin/verify-receipt',
+        method: 'POST',
+        body: { subscriptionId, receiptVerified, subscriptionDetails }
+      })
+    }),
     // Upload receipt
     uploadReceipt: builder.mutation({
-      query: ({ subscriptionId, receiptFile }) => {
+      query: ({ subscriptionId, receiptFile, receiptNumber }) => {
         const formData = new FormData();
         formData.append('subscriptionId', subscriptionId);
         formData.append('receiptFile', receiptFile);
+        if (receiptNumber) {
+          formData.append('receiptNumber', receiptNumber);
+        }
         
         return {
           url: '/subscriber/upload-receipt',
@@ -146,6 +180,16 @@ export const apiSlice = createApi({
         body: updateData
       })
     }),
+    // Create renewal subscription
+    createRenewalSubscription: builder.mutation({
+      query: (renewalData) => ({
+        url: '/subscriber/create-renewal',
+        method: 'POST',
+        body: renewalData
+      })
+    }),
+    
+
   }),
 });
 
@@ -166,7 +210,11 @@ export const {
   useGetDashboardStatsQuery,
   useGetSubscriberDashboardQuery,
   useRequestInvoiceMutation,
+  useMarkInvoiceNotRequiredMutation,
+  useUploadInvoiceMutation,
+  useVerifyReceiptMutation,
   useUploadReceiptMutation,
   useSubmitSubscriptionOrderMutation,
   useUpdateSubscriberInfoMutation,
+  useCreateRenewalSubscriptionMutation,
 } = apiSlice; 

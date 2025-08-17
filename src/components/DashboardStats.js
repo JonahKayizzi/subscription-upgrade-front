@@ -5,6 +5,7 @@ import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recha
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import AnnualSubscriptionsBar from './AnnualSubscriptionsBar';
+import { SUBSCRIPTION_TYPES, getSubscriptionTypeColors } from '../config/subscriptionTypes';
 
 const BoardContainer = styled.div`
   background-color: var(--color-bg-card);
@@ -95,7 +96,8 @@ export default function DashboardStats() {
   if (isLoading) return <div>Loading dashboard stats...</div>;
   if (error) return <div>Error loading dashboard stats.</div>;
 
-  const COLORS = ['#f7b801', '#a259f7', '#43e97b', '#ff4d4f', '#00bcd4', '#ff9800'];
+  const subscriptionTypeColors = getSubscriptionTypeColors();
+  const COLORS = Object.values(subscriptionTypeColors);
 
   return (
 

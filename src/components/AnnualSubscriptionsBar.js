@@ -10,6 +10,7 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
+import { getSubscriptionTypeColors } from '../config/subscriptionTypes';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
@@ -28,6 +29,7 @@ const ChartContainer = styled.div`
 
 export default function AnnualSubscriptionsBar({ data }) {
   const currentYear = new Date().getFullYear();
+  const subscriptionTypeColors = getSubscriptionTypeColors();
 
   const chartData = {
     labels: data.map((d) => d.sub_type),
@@ -35,11 +37,7 @@ export default function AnnualSubscriptionsBar({ data }) {
       {
         label: `Subscriptions for ${currentYear}`,
         data: data.map((d) => d.count),
-        backgroundColor: [
-          '#f7b801', // CD
-          '#a259f7', // eAIP
-          '#43e97b', // paper
-        ],
+        backgroundColor: data.map((d) => subscriptionTypeColors[d.sub_type] || '#cccccc'),
         borderRadius: 8,
       },
     ],

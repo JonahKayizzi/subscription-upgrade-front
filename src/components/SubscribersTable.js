@@ -20,6 +20,7 @@ import {
 import { FaUser, FaEnvelope, FaPhone, FaMapMarkerAlt, FaBox, FaInfoCircle, FaUserTie, FaCalendarAlt, FaRegBuilding, FaFileContract } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import AddSubscriberForm from './AddSubscriberForm';
+import { SUBSCRIPTION_TYPES, getSubscriptionType, hasCredentials, hasDelivery } from '../config/subscriptionTypes';
 
 ChartJS.register(
   CategoryScale,
@@ -52,16 +53,20 @@ const StatusBadge = styled.span`
   background: ${props => {
     switch (props.status) {
       case 'active': return 'rgba(67, 233, 123, 0.2)';
+      case 'pending': return 'rgba(255, 193, 7, 0.2)';
       case 'expired': return 'rgba(255, 77, 79, 0.2)';
       case 'inactive': return 'rgba(162, 89, 247, 0.2)';
+      case 'none': return 'rgba(158, 158, 158, 0.2)';
       default: return 'rgba(255, 255, 255, 0.1)';
     }
   }};
   color: ${props => {
     switch (props.status) {
       case 'active': return 'var(--color-success)';
+      case 'pending': return '#ff9800';
       case 'expired': return 'var(--color-error)';
       case 'inactive': return 'var(--color-accent2)';
+      case 'none': return '#9e9e9e';
       default: return 'var(--color-text-muted)';
     }
   }};
@@ -284,20 +289,20 @@ const SectionTitle = styled.h4`
 
 const CurrentSubscriptionsGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 16px;
-  margin-bottom: 32px;
+  margin-bottom: 20px;
 `;
 
 const SubscriptionItem = styled.div`
   background: var(--color-background-card);
   border: 1px solid var(--color-border);
   border-radius: 8px;
-  padding: 16px;
+  padding: 12px;
 
   p {
-    margin: 4px 0;
-    font-size: 0.9rem;
+    margin: 2px 0;
+    font-size: 0.85rem;
     color: var(--color-text-muted);
     strong {
       color: var(--color-text);
@@ -739,65 +744,122 @@ export default function SubscribersTable() {
                 </SaveButtonContainer>
               </LeftPane>
               <RightPane>
-                <ActionButton onClick={() => navigate(`/subscriber/${subscriberDetails.sub_id}/add-subscription`)} style={{ marginBottom: 24 }}>
-                  <ActionIcon><FaFileContract /></ActionIcon>
-                  Add Subscription
-                </ActionButton>
+                {(() => {
+                  // Check if subscriber has any current or pending subscriptions
+                  const hasCurrentOrPending = subscriberDetails.subscriptions.some(sub => 
+                    sub.status === 'active' || sub.status === 'pending'
+                  );
+                  
+                  return hasCurrentOrPending ? (
+                    <ActionButton onClick={() => navigate(`/subscribers`)} style={{ marginBottom: 24 }}>
+                      <ActionIcon><FaFileContract /></ActionIcon>
+                      Manage Subscriptions
+                    </ActionButton>
+                  ) : (
+                    <ActionButton onClick={() => navigate(`/subscriber/${subscriberDetails.sub_id}/add-subscription`)} style={{ marginBottom: 24 }}>
+                      <ActionIcon><FaFileContract /></ActionIcon>
+                      Add Subscription
+                    </ActionButton>
+                  );
+                })()}
                 <SectionTitle>Current Subscriptions</SectionTitle>
                 <CurrentSubscriptionsGrid>
-                  <SubscriptionItem>
-                    <SubscriptionHeader>
-                      <h6>eAIP</h6>
-                      <StatusBadge status={subscriberDetails.subscriptions.find(s => s.sub_type === 'eAIP')?.status || 'inactive'}>
-                        {subscriberDetails.subscriptions.find(s => s.sub_type === 'eAIP')?.status || 'inactive'}
-                      </StatusBadge>
-                    </SubscriptionHeader>
-                    {subscriberDetails.subscriptions.find(s => s.sub_type === 'eAIP') ? (
-                    <>
-                      <p><strong>Expiry:</strong> {formatDate(subscriberDetails.subscriptions.find(s => s.sub_type === 'eAIP').sub_exp_date)}</p>
-                      <p><strong>Username:</strong> {subscriberDetails.subscriptions.find(s => s.sub_type === 'eAIP').eaip_user_name}</p>
-                      <SubscriptionActions>
-                        <Button onClick={() => navigate(`/subscriber/${subscriberDetails.sub_id}/edit-subscription/${subscriberDetails.subscriptions.find(s => s.sub_type === 'eAIP')?.id}`)}>Manage</Button>
-                      </SubscriptionActions>
-                    </> 
-                    ) : ( <Button onClick={() => navigate(`/subscriber/${subscriberDetails.sub_id}/add-subscription?type=eAIP`)}>Add Subscription</Button> )}
-                  </SubscriptionItem>
-                  <SubscriptionItem>
-                    <SubscriptionHeader>
-                      <h6>CD</h6>
-                      <StatusBadge status={subscriberDetails.subscriptions.find(s => s.sub_type === 'CD')?.status || 'inactive'}>
-                        {subscriberDetails.subscriptions.find(s => s.sub_type === 'CD')?.status || 'inactive'}
-                      </StatusBadge>
-                    </SubscriptionHeader>
-                    {subscriberDetails.subscriptions.find(s => s.sub_type === 'CD') ? (
-                    <>
-                      <p><strong>Expiry:</strong> {formatDate(subscriberDetails.subscriptions.find(s => s.sub_type === 'CD').sub_exp_date)}</p>
-                      <p><strong>Delivery:</strong> {subscriberDetails.subscriptions.find(s => s.sub_type === 'CD').sub_delivery}</p>
-                      <SubscriptionActions>
-                        <Button onClick={() => navigate(`/subscriber/${subscriberDetails.sub_id}/edit-subscription/${subscriberDetails.subscriptions.find(s => s.sub_type === 'CD')?.id}`)}>Manage</Button>
-                      </SubscriptionActions>
-                    </> 
-                    ) : ( <Button onClick={() => navigate(`/subscriber/${subscriberDetails.sub_id}/add-subscription?type=CD`)}>Add Subscription</Button> )}
-                  </SubscriptionItem>
-                  <SubscriptionItem>
-                    <SubscriptionHeader>
-                      <h6>Paper</h6>
-                      <StatusBadge status={subscriberDetails.subscriptions.find(s => s.sub_type === 'Paper')?.status || 'inactive'}>
-                        {subscriberDetails.subscriptions.find(s => s.sub_type === 'Paper')?.status || 'inactive'}
-                      </StatusBadge>
-                    </SubscriptionHeader>
-                    {subscriberDetails.subscriptions.find(s => s.sub_type === 'Paper') ? (
-                    <>
-                      <p><strong>Expiry:</strong> {formatDate(subscriberDetails.subscriptions.find(s => s.sub_type === 'Paper').sub_exp_date)}</p>
-                      <p><strong>Delivery:</strong> {subscriberDetails.subscriptions.find(s => s.sub_type === 'Paper').sub_delivery}</p>
-                      <SubscriptionActions>
-                        <Button onClick={() => navigate(`/subscriber/${subscriberDetails.sub_id}/edit-subscription/${subscriberDetails.subscriptions.find(s => s.sub_type === 'Paper')?.id}`)}>Manage</Button>
-                      </SubscriptionActions>
-                    </> 
-                    ) : ( <Button onClick={() => navigate(`/subscriber/${subscriberDetails.sub_id}/add-subscription?type=Paper`)}>Add Subscription</Button> )}
-                  </SubscriptionItem>
+                  {SUBSCRIPTION_TYPES.map(subscriptionType => {
+                    // Find the most recent subscription for this type
+                    // Prioritize pending subscriptions (sub_status = 2) as they are the most recent
+                    const allSubscriptionsOfType = subscriberDetails.subscriptions
+                      .filter(s => s.sub_type === subscriptionType.id)
+                      .sort((a, b) => {
+                        // First priority: pending subscriptions (sub_status = 2)
+                        if (a.sub_status === 2 && b.sub_status !== 2) return -1;
+                        if (b.sub_status === 2 && a.sub_status !== 2) return 1;
+                        
+                        // Second priority: active subscriptions (sub_status = 1)
+                        if (a.sub_status === 1 && b.sub_status !== 1) return -1;
+                        if (b.sub_status === 1 && a.sub_status !== 1) return 1;
+                        
+                        // Third priority: sort by date (most recent first)
+                        return new Date(b.sub_date || b.sub_start_date) - new Date(a.sub_date || a.sub_start_date);
+                      });
+                    
+                    const latestSubscription = allSubscriptionsOfType[0];
+                    const IconComponent = subscriptionType.icon;
+                    
+                    // Determine subscription status using the backend-provided status
+                    const isCurrent = latestSubscription && latestSubscription.status === 'active';
+                    const isPending = latestSubscription && latestSubscription.status === 'pending';
+                    const isExpired = latestSubscription && latestSubscription.status === 'expired';
+                    const hasAnySubscription = allSubscriptionsOfType.length > 0;
+                    
+                    // Debug logging to see what's happening
+                    console.log(`Subscription Type: ${subscriptionType.id}`, {
+                      latestSubscription,
+                      status: latestSubscription?.status,
+                      sub_status: latestSubscription?.sub_status,
+                      isCurrent,
+                      isPending,
+                      isExpired,
+                      hasAnySubscription
+                    });
+                    
+                    return (
+                      <SubscriptionItem key={subscriptionType.id}>
+                        <SubscriptionHeader>
+                          <h6>{subscriptionType.displayName}</h6>
+                          <StatusBadge status={
+                            isCurrent ? 'active' : 
+                            isPending ? 'pending' : 
+                            isExpired ? 'expired' : 'none'
+                          }>
+                            {isCurrent ? 'Active' : 
+                             isPending ? 'Pending' : 
+                             isExpired ? 'Expired' : 'None'}
+                          </StatusBadge>
+                        </SubscriptionHeader>
+                        
+                        {/* Show current or pending subscriptions */}
+                        {(isCurrent || isPending) && latestSubscription ? (
+                          <>
+                            {isCurrent && latestSubscription.sub_exp_date && (
+                              <p><strong>Expiry:</strong> {formatDate(latestSubscription.sub_exp_date)}</p>
+                            )}
+                            {isPending && (
+                              <p><strong>Status:</strong> Awaiting approval</p>
+                            )}
+                            {hasCredentials(subscriptionType.id) && latestSubscription.eaip_user_name && (
+                              <p><strong>Username:</strong> {latestSubscription.eaip_user_name}</p>
+                            )}
+                            {hasDelivery(subscriptionType.id) && latestSubscription.sub_delivery && (
+                              <p><strong>Delivery:</strong> {latestSubscription.sub_delivery}</p>
+                            )}
+                            <SubscriptionActions>
+                              <Button onClick={() => navigate(`/subscriber/${subscriberDetails.sub_id}/edit-subscription/${latestSubscription.id}`)}>
+                                {isCurrent ? 'Manage' : 'View'}
+                              </Button>
+                            </SubscriptionActions>
+                          </>
+                        ) : (
+                          /* Show appropriate action button based on subscription history */
+                          <div>
+                            {hasAnySubscription && isExpired ? (
+                              <Button 
+                                onClick={() => navigate(`/subscriber/${subscriberDetails.sub_id}/add-subscription?type=${subscriptionType.id}&renew=true`)}
+                                style={{ background: 'var(--color-accent2)', color: 'white' }}
+                              >
+                                Renew {subscriptionType.displayName}
+                              </Button>
+                            ) : (
+                              <Button onClick={() => navigate(`/subscriber/${subscriberDetails.sub_id}/add-subscription?type=${subscriptionType.id}`)}>
+                                Add {subscriptionType.displayName}
+                              </Button>
+                            )}
+                          </div>
+                        )}
+                      </SubscriptionItem>
+                    );
+                  })}
                 </CurrentSubscriptionsGrid>
-                <SectionTitle>Subscription History</SectionTitle>
+                <SectionTitle>All Subscriptions</SectionTitle>
                 <HistoryTable>
                   <thead>
                     <tr>
@@ -810,24 +872,43 @@ export default function SubscribersTable() {
                     </tr>
                   </thead>
                   <tbody>
-                    {subscriberDetails.subscriptions.length > 0 ? (
-                      [...subscriberDetails.subscriptions].sort((a, b) => new Date(b.sub_exp_date) - new Date(a.sub_exp_date)).map(sub => (
-                        <tr key={sub.id}>
-                          <td><StatusBadge status={sub.status}>{sub.status}</StatusBadge></td>
-                          <td>{sub.sub_type}</td>
-                          <td>{formatDate(sub.sub_start_date)}</td>
-                          <td>{formatDate(sub.sub_exp_date)}</td>
-                          <td>${sub.sub_amount?.toLocaleString()}</td>
-                          <td>
-                            <Button style={{ padding: '4px 12px', fontSize: 13 }} onClick={() => navigate(`/subscriber/${subscriberDetails.sub_id}/edit-subscription/${sub.id}`)}>
-                              View
-                            </Button>
-                          </td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr><td colSpan="6" style={{ textAlign: 'center' }}>No history</td></tr>
-                    )}
+                    {(() => {
+                      // Filter and sort subscriptions for history display - show ALL subscriptions
+                      const sortedSubscriptions = [...subscriberDetails.subscriptions]
+                        .sort((a, b) => new Date(b.sub_date || b.sub_start_date) - new Date(a.sub_date || a.sub_start_date));
+                      
+                      return sortedSubscriptions.length > 0 ? (
+                        sortedSubscriptions.map(sub => {
+                          const isCurrent = sub.status === 'active';
+                          const isPending = sub.status === 'pending';
+                          const isExpired = sub.status === 'expired';
+                          
+                          return (
+                            <tr key={sub.id}>
+                              <td>
+                                <StatusBadge status={isCurrent ? 'active' : isPending ? 'pending' : isExpired ? 'expired' : 'inactive'}>
+                                  {isCurrent ? 'Active' : isPending ? 'Pending' : isExpired ? 'Expired' : 'Inactive'}
+                                </StatusBadge>
+                              </td>
+                              <td>{sub.sub_type}</td>
+                              <td>{sub.sub_start_date ? formatDate(sub.sub_start_date) : 'N/A'}</td>
+                              <td>{sub.sub_exp_date ? formatDate(sub.sub_exp_date) : 'N/A'}</td>
+                              <td>{sub.sub_amount ? `$${sub.sub_amount.toLocaleString()}` : 'N/A'}</td>
+                              <td>
+                                <Button 
+                                  style={{ padding: '4px 12px', fontSize: 13 }} 
+                                  onClick={() => navigate(`/subscriber/${subscriberDetails.sub_id}/edit-subscription/${sub.id}`)}
+                                >
+                                  {isCurrent ? 'Manage' : isPending ? 'View' : 'View'}
+                                </Button>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      ) : (
+                        <tr><td colSpan="6" style={{ textAlign: 'center' }}>No subscription history</td></tr>
+                      );
+                    })()}
                   </tbody>
                 </HistoryTable>
               </RightPane>

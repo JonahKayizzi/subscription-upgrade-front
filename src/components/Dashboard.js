@@ -16,6 +16,7 @@ import {
   LineElement
 } from 'chart.js';
 import { useNavigate } from 'react-router-dom';
+import { SUBSCRIPTION_TYPES, getSubscriptionTypeColors } from '../config/subscriptionTypes';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, ChartTooltip, ChartLegend, PointElement, LineElement);
 
@@ -59,6 +60,7 @@ export default function Dashboard() {
 
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const revenue = data?.revenue || { total: 0, by_type: {}, monthly: [], historical: [] };
+  const subscriptionTypeColors = getSubscriptionTypeColors();
 
   // Historical revenue data
   const historicalRevenueData = {
@@ -116,23 +118,13 @@ export default function Dashboard() {
 
   const revenueData = {
     labels: months,
-    datasets: [
-      {
-        label: 'eAIP',
-        data: revenue.monthly.map(m => m.eAIP),
-        backgroundColor: 'rgba(67, 233, 123, 0.5)',
-      },
-      {
-        label: 'CD',
-        data: revenue.monthly.map(m => m.CD),
-        backgroundColor: 'rgba(162, 89, 247, 0.5)',
-      },
-      {
-        label: 'Paper',
-        data: revenue.monthly.map(m => m.Paper),
-        backgroundColor: 'rgba(255, 77, 79, 0.5)',
-      }
-    ]
+    datasets: SUBSCRIPTION_TYPES.map(type => ({
+      label: type.displayName,
+      data: revenue.monthly.map(m => m[type.id] || 0),
+      backgroundColor: `${type.color}80`, // 80 = 50% opacity
+      borderColor: type.color,
+      borderWidth: 1
+    }))
   };
 
   const chartOptions = {
@@ -222,7 +214,7 @@ export default function Dashboard() {
                       </div>
                     </div>
                     <button
-                      onClick={() => navigate(`/subscriber/${sub.subscriber_id}/add-subscription?type=${sub.sub_type}`)}
+                      onClick={() => navigate(`/subscriber/${sub.subscriber_id}/edit-subscription/${sub.id}`)}
                       style={{
                         padding: '8px 16px',
                         background: isExpiringSoon ? 'var(--color-error)' : 'var(--color-primary)',
@@ -301,7 +293,7 @@ export default function Dashboard() {
                       </div>
                     </div>
                     <button
-                      onClick={() => navigate(`/subscriber/${sub.subscriber_id}/add-subscription?type=${sub.sub_type}`)}
+                      onClick={() => navigate(`/subscriber/${sub.subscriber_id}/edit-subscription/${sub.id}`)}
                       style={{
                         padding: '8px 16px',
                         background: 'var(--color-error)',
