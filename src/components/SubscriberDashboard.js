@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
 import Card from './ui/Card';
 import styled from 'styled-components';
-import { FaFileAlt, FaUpload, FaDownload, FaCheckCircle, FaClock, FaExclamationTriangle, FaPlus, FaGlobe, FaFileAlt as FaPaper, FaCompactDisc, FaChevronDown, FaChevronUp } from 'react-icons/fa';
-import { useGetSubscriberDashboardQuery, useRequestInvoiceMutation, useUploadReceiptMutation, useUpdateSubscriberInfoMutation } from '../api/apiSlice';
+import { FaFileAlt, FaUpload, FaDownload, FaCheckCircle, FaClock, FaExclamationTriangle, FaPlus, FaChevronDown, FaChevronUp, FaEye, FaTimes } from 'react-icons/fa';
+import { useGetSubscriberDashboardQuery, useRequestInvoiceMutation, useMarkInvoiceNotRequiredMutation, useUploadReceiptMutation, useUpdateSubscriberInfoMutation, useCreateRenewalSubscriptionMutation } from '../api/apiSlice';
 import SubscriberInfoForm from './SubscriberInfoForm';
+import RenewalModal from './RenewalModal';
+import { SUBSCRIPTION_TYPES } from '../config/subscriptionTypes';
 
 const DashboardContainer = styled.div`
   padding: 32px;
@@ -423,22 +425,31 @@ const ExpiredBadge = styled.span`
 
 export default function SubscriberDashboard() {
   const user = useSelector(state => state.auth.user);
-  const { data: dashboardData, isLoading, error } = useGetSubscriberDashboardQuery();
+  const { data: dashboardData, isLoading, error, refetch } = useGetSubscriberDashboardQuery();
   const [activeTab, setActiveTab] = useState('eAIP');
   const [expandedSubscriptions, setExpandedSubscriptions] = useState(new Set());
+  const [renewalModal, setRenewalModal] = useState({ isOpen: false, subscriptionType: null });
+  const [receiptFile, setReceiptFile] = useState(null);
+  const [receiptNumber, setReceiptNumber] = useState('');
+  const [isSubmittingReceipt, setIsSubmittingReceipt] = useState(false);
   const [requestInvoice] = useRequestInvoiceMutation();
+  const [markInvoiceNotRequired] = useMarkInvoiceNotRequiredMutation();
   const [uploadReceipt] = useUploadReceiptMutation();
   const [updateSubscriberInfo] = useUpdateSubscriberInfoMutation();
+  const [createRenewalSubscription] = useCreateRenewalSubscriptionMutation();
   
-  const subscriptionTypes = [
-    { id: 'eAIP', label: 'eAIP', icon: <FaGlobe />, description: 'Electronic Aeronautical Information Publication' },
-    { id: 'Paper AIP', label: 'Paper AIP', icon: <FaPaper />, description: 'Physical Paper Publications' },
-    { id: 'CD AIP', label: 'CD AIP', icon: <FaCompactDisc />, description: 'CD-ROM Publications' }
-  ];
+  const subscriptionTypes = SUBSCRIPTION_TYPES.map(type => ({
+    id: type.id,
+    label: type.label,
+    icon: React.createElement(type.icon),
+    description: type.description
+  }));
 
   const handleRequestInvoice = async (subscriptionId) => {
     try {
       await requestInvoice(subscriptionId).unwrap();
+      // Refresh dashboard data after update
+      refetch();
       // TODO: Show success message
     } catch (err) {
       console.error('Failed to request invoice:', err);
@@ -446,16 +457,49 @@ export default function SubscriberDashboard() {
     }
   };
 
+  const handleInvoiceNotRequired = async (subscriptionId) => {
+    try {
+      await markInvoiceNotRequired(subscriptionId).unwrap();
+      // Refresh dashboard data after update
+      refetch();
+      // TODO: Show success message
+    } catch (err) {
+      console.error('Failed to mark invoice as not required:', err);
+      // TODO: Show error message
+    }
+  };
+
   const handleUploadReceipt = async (subscriptionId, event) => {
     const file = event.target.files[0];
     if (file) {
-      try {
-        await uploadReceipt({ subscriptionId, receiptFile: file }).unwrap();
-        // TODO: Show success message
-      } catch (err) {
-        console.error('Failed to upload receipt:', err);
-        // TODO: Show error message
-      }
+      setReceiptFile(file);
+    }
+  };
+
+  const handleSubmitReceipt = async (subscriptionId) => {
+    if (!receiptFile || !receiptNumber) return;
+    
+    try {
+      setIsSubmittingReceipt(true);
+      
+      await uploadReceipt({
+        subscriptionId,
+        receiptFile: receiptFile,
+        receiptNumber: receiptNumber
+      }).unwrap();
+      
+      // Clear form and refresh data
+      setReceiptFile(null);
+      setReceiptNumber('');
+      
+      // Refresh the data to show updated status
+      refetch();
+      
+    } catch (err) {
+      console.error('Failed to upload receipt:', err);
+      // TODO: Show error message
+    } finally {
+      setIsSubmittingReceipt(false);
     }
   };
 
@@ -475,13 +519,7 @@ export default function SubscriberDashboard() {
   };
 
   const handleRenewSubscription = async (subscriptionType) => {
-    try {
-      // TODO: Implement renewal logic
-      console.log(`Renewing ${subscriptionType} subscription`);
-      // This would typically navigate to a renewal form or trigger a renewal process
-    } catch (err) {
-      console.error('Failed to renew subscription:', err);
-    }
+    setRenewalModal({ isOpen: true, subscriptionType });
   };
 
   const toggleExpandedSubscription = (subscriptionId) => {
@@ -494,6 +532,59 @@ export default function SubscriberDashboard() {
       }
       return newSet;
     });
+  };
+
+  const handleViewForm = (filePath) => {
+    if (filePath) {
+      const pdfUrl = `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/${filePath}`;
+      window.open(pdfUrl, '_blank');
+    }
+  };
+
+  const handleViewInvoice = (filePath) => {
+    if (filePath) {
+      const invoiceUrl = `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/${filePath}`;
+      window.open(invoiceUrl, '_blank');
+    }
+  };
+
+  const handleViewReceipt = (filePath) => {
+    if (filePath) {
+      const receiptUrl = `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/${filePath}`;
+      window.open(receiptUrl, '_blank');
+    }
+  };
+
+  const handleSubmitOrderForm = async (selectedOptions = []) => {
+    try {
+      // Helper function to format date for MySQL DATE columns
+      const formatMySQLDate = (date) => {
+        const d = new Date(date);
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      };
+
+      const now = new Date();
+      const renewalData = {
+        sub_type: renewalModal.subscriptionType,
+        sub_status: 2, // pending
+        order_sent_date: formatMySQLDate(now),
+        order_received_date: formatMySQLDate(now),
+        selected_options: selectedOptions // Pass selected options to backend
+      };
+
+      await createRenewalSubscription(renewalData).unwrap();
+      
+      // Close modal and refresh dashboard
+      setRenewalModal({ isOpen: false, subscriptionType: null });
+      refetch(); // Refresh dashboard data
+      
+    } catch (err) {
+      console.error('Failed to create renewal subscription:', err);
+      // TODO: Show error message to user
+    }
   };
 
   if (isLoading) {
@@ -583,22 +674,159 @@ export default function SubscriberDashboard() {
               const hasOrderForm = subscription.subscription_form;
               const hasInvoice = subscription.subscription_invoice;
               const hasReceipt = subscription.subscription_receipt;
+              const hasInvoiceRequested = subscription.invoice_requested_date;
+              const isInvoiceNotRequired = subscription.invoice_no === 'NOT_REQUIRED' || subscription.sub_invoice === 'NOT_REQUIRED';
               
               const progress = [
                 { 
                   step: 'Order Form', 
                   completed: hasOrderForm, 
-                  description: hasOrderForm ? `Submitted on ${new Date(subscription.sub_date).toLocaleDateString()}` : 'Not submitted'
+                  description: hasOrderForm ? `Submitted on ${new Date(subscription.sub_date).toLocaleDateString()}` : 'Not submitted',
+                  hasAction: hasOrderForm,
+                  actionButton: hasOrderForm ? (
+                    <ActionButton 
+                      className="primary" 
+                      onClick={() => handleViewForm(subscription.subscription_form)}
+                      style={{ fontSize: '0.75rem', padding: '4px 8px', marginTop: '8px', marginLeft: 'auto' }}
+                    >
+                      <FaEye style={{ marginRight: '4px' }} />
+                      View Form
+                    </ActionButton>
+                  ) : null
                 },
                 { 
                   step: 'Invoice', 
-                  completed: hasInvoice, 
-                  description: hasInvoice ? 'Received' : 'Awaiting admin response'
+                  completed: hasInvoice || isInvoiceNotRequired, 
+                  description: hasInvoice ? 'Received' : isInvoiceNotRequired ? 'Not Required - No invoice needed for this subscription' : hasInvoiceRequested ? 'Waiting for admin upload' : 'Awaiting admin response',
+                  hasAction: (!hasInvoice && !isInvoiceNotRequired) || hasInvoice,
+                  actionButton: !hasInvoice && !isInvoiceNotRequired && !hasInvoiceRequested ? (
+                    <div style={{ display: 'flex', gap: '8px', marginTop: '8px', marginLeft: 'auto' }}>
+                      <ActionButton 
+                        className="warning" 
+                        onClick={() => handleRequestInvoice(subscription.id)}
+                        style={{ fontSize: '0.75rem', padding: '4px 8px' }}
+                      >
+                        <FaExclamationTriangle style={{ marginRight: '4px' }} />
+                        Request Invoice
+                      </ActionButton>
+                      <ActionButton 
+                        className="secondary" 
+                        onClick={() => handleInvoiceNotRequired(subscription.id)}
+                        style={{ fontSize: '0.75rem', padding: '4px 8px' }}
+                      >
+                        <FaTimes style={{ marginRight: '4px' }} />
+                        Not Required
+                      </ActionButton>
+                    </div>
+                  ) : hasInvoiceRequested && !hasInvoice ? (
+                    <div style={{ fontSize: '0.75rem', color: 'var(--color-warning)', marginTop: '8px', marginLeft: 'auto', fontStyle: 'italic' }}>
+                      ⏳ Waiting for admin to upload invoice
+                    </div>
+                  ) : isInvoiceNotRequired ? (
+                    <div style={{ fontSize: '0.75rem', color: 'var(--color-success)', marginTop: '8px', marginLeft: 'auto', fontStyle: 'italic' }}>
+                      ✓ Invoice not required for this subscription
+                    </div>
+                  ) : hasInvoice ? (
+                    <ActionButton 
+                      className="primary" 
+                      onClick={() => handleViewInvoice(subscription.subscription_invoice)}
+                      style={{ fontSize: '0.75rem', padding: '4px 8px', marginTop: '8px', marginLeft: 'auto' }}
+                    >
+                      <FaDownload style={{ marginRight: '4px' }} />
+                      View Invoice
+                    </ActionButton>
+                  ) : null
                 },
                 { 
                   step: 'Receipt', 
-                  completed: hasReceipt, 
-                  description: hasReceipt ? 'Submitted' : 'Pending invoice'
+                  completed: hasReceipt && subscription.receipt_verified_date, 
+                  description: hasReceipt ? 
+                    (subscription.receipt_verified_date ? 'Verified and activated' : 'Submitted - Pending admin verification') : 
+                    (hasInvoice || isInvoiceNotRequired) ? 'Pending payment receipt' : 'Pending invoice',
+                  hasAction: hasReceipt || (hasInvoice || isInvoiceNotRequired) && !hasReceipt,
+                  actionButton: hasReceipt ? (
+                    subscription.receipt_verified_date ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px', marginLeft: 'auto' }}>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--color-success)', fontStyle: 'italic' }}>
+                          ✓ Receipt verified on {new Date(subscription.receipt_verified_date).toLocaleDateString()}
+                        </div>
+                        <ActionButton 
+                          className="primary" 
+                          onClick={() => handleViewReceipt(subscription.subscription_receipt)}
+                          style={{ fontSize: '0.75rem', padding: '4px 8px', alignSelf: 'flex-start' }}
+                        >
+                          <FaEye style={{ marginRight: '4px' }} />
+                          View Receipt
+                        </ActionButton>
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px', marginLeft: 'auto' }}>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--color-warning)', marginBottom: '8px' }}>
+                          Receipt uploaded - Pending admin verification
+                        </div>
+                        <ActionButton 
+                          className="primary" 
+                          onClick={() => handleViewReceipt(subscription.subscription_receipt)}
+                          style={{ fontSize: '0.75rem', padding: '4px 8px', alignSelf: 'flex-start' }}
+                        >
+                          <FaEye style={{ marginRight: '4px' }} />
+                          View Receipt
+                        </ActionButton>
+                      </div>
+                    )
+                  ) : (hasInvoice || isInvoiceNotRequired) && !hasReceipt ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px', marginLeft: 'auto' }}>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginBottom: '8px' }}>
+                        Upload payment receipt to continue
+                      </div>
+                      <FileUploadSection>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <label style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
+                              Receipt Number:
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="Enter receipt number"
+                              value={receiptNumber || ''}
+                              onChange={(e) => setReceiptNumber(e.target.value)}
+                              style={{
+                                padding: '4px 8px',
+                                border: '1px solid var(--color-border)',
+                                borderRadius: '4px',
+                                fontSize: '0.75rem',
+                                background: 'var(--color-background)',
+                                color: 'var(--color-text)',
+                                minWidth: '120px'
+                              }}
+                            />
+                          </div>
+                          <UploadLabel>
+                            <FaUpload />
+                            Upload Receipt File
+                            <UploadInput
+                              type="file"
+                              accept=".pdf,.jpg,.jpeg,.png"
+                              onChange={(e) => handleUploadReceipt(subscription.id, e)}
+                            />
+                          </UploadLabel>
+                          {receiptFile && (
+                            <div style={{ fontSize: '0.75rem', color: 'var(--color-success)', marginTop: '4px' }}>
+                              ✓ File selected: {receiptFile.name}
+                            </div>
+                          )}
+                          <ActionButton 
+                            className="primary" 
+                            onClick={() => handleSubmitReceipt(subscription.id)}
+                            disabled={!receiptFile || !receiptNumber || isSubmittingReceipt}
+                            style={{ fontSize: '0.75rem', padding: '4px 8px', alignSelf: 'flex-start' }}
+                          >
+                            {isSubmittingReceipt ? 'Submitting...' : 'Submit Receipt'}
+                          </ActionButton>
+                        </div>
+                      </FileUploadSection>
+                    </div>
+                  ) : null
                 }
               ];
 
@@ -617,11 +845,20 @@ export default function SubscriberDashboard() {
                            <h3 style={{ marginBottom: '8px', color: 'var(--color-text)' }}>
                              {subscription.sub_type} Subscription
                            </h3>
-                           <div style={{ display: 'flex', gap: '16px', marginBottom: '8px', fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>
-                             <span>Amount: ${subscription.sub_amount}</span>
-                             <span>Start: {new Date(subscription.sub_start_date).toLocaleDateString()}</span>
-                             <span>End: {new Date(subscription.sub_exp_date).toLocaleDateString()}</span>
-                           </div>
+                                                    <div style={{ display: 'flex', gap: '16px', marginBottom: '8px', fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>
+                           {subscription.status !== 'pending' && subscription.sub_status !== 2 && (
+                             <>
+                               <span>Amount: ${subscription.sub_amount}</span>
+                               <span>Start: {new Date(subscription.sub_start_date).toLocaleDateString()}</span>
+                               <span>End: {new Date(subscription.sub_exp_date).toLocaleDateString()}</span>
+                             </>
+                           )}
+                           {subscription.status === 'pending' || subscription.sub_status === 2 ? (
+                             <span style={{ fontStyle: 'italic', color: 'var(--color-accent2)' }}>
+                               Details will be provided once approved
+                             </span>
+                           ) : null}
+                         </div>
                          </div>
                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                            <ExpiredBadge>
@@ -647,36 +884,15 @@ export default function SubscriberDashboard() {
                                <StepContent>
                                  <StepTitle>{step.step}</StepTitle>
                                  <StepDescription>{step.description}</StepDescription>
+                                 {step.actionButton}
                                </StepContent>
                              </ProgressStep>
                            ))}
+                           
+
                          </ProgressSection>
 
                          <div style={{ marginTop: '16px', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                           {!hasInvoice && (
-                             <ActionButton 
-                               className="warning" 
-                               onClick={() => handleRequestInvoice(subscription.id)}
-                             >
-                               <FaExclamationTriangle style={{ marginRight: '8px' }} />
-                               Request Invoice
-                             </ActionButton>
-                           )}
-                           
-                           {hasInvoice && !hasReceipt && (
-                             <FileUploadSection>
-                               <UploadLabel>
-                                 <FaUpload />
-                                 Upload Payment Receipt
-                                 <UploadInput
-                                   type="file"
-                                   accept=".pdf,.jpg,.jpeg,.png"
-                                   onChange={(e) => handleUploadReceipt(subscription.id, e)}
-                                 />
-                               </UploadLabel>
-                             </FileUploadSection>
-                           )}
-                           
                            {hasReceipt && (
                              <ActionButton className="success">
                                <FaCheckCircle style={{ marginRight: '8px' }} />
@@ -686,18 +902,34 @@ export default function SubscriberDashboard() {
                          </div>
 
                          <HistorySection>
-                           <HistoryTitle>Subscription History</HistoryTitle>
+                           <HistoryTitle>Subscription Summary</HistoryTitle>
                            <HistoryItem>
                              <HistoryIcon type="order">O</HistoryIcon>
                              <HistoryText>Order form submitted</HistoryText>
                              <HistoryDate>{new Date(subscription.sub_date).toLocaleDateString()}</HistoryDate>
                            </HistoryItem>
                            
-                           {hasInvoice && (
+                           {hasInvoiceRequested && !hasInvoice && !isInvoiceNotRequired && (
+                             <HistoryItem>
+                               <HistoryIcon type="invoice">I</HistoryIcon>
+                               <HistoryText>Invoice requested</HistoryText>
+                               <HistoryDate>{new Date(subscription.invoice_requested_date).toLocaleDateString()}</HistoryDate>
+                             </HistoryItem>
+                           )}
+                           
+                           {hasInvoice && !isInvoiceNotRequired && (
                              <HistoryItem>
                                <HistoryIcon type="invoice">I</HistoryIcon>
                                <HistoryText>Invoice received from admin</HistoryText>
-                               <HistoryDate>{new Date(subscription.subscription_invoice_date || subscription.sub_date).toLocaleDateString()}</HistoryDate>
+                               <HistoryDate>{new Date(subscription.invoice_received_date || subscription.sub_date).toLocaleDateString()}</HistoryDate>
+                             </HistoryItem>
+                           )}
+                           
+                           {isInvoiceNotRequired && (
+                             <HistoryItem>
+                               <HistoryIcon type="invoice">I</HistoryIcon>
+                               <HistoryText>Invoice not required</HistoryText>
+                               <HistoryDate style={{ color: 'var(--color-success)', fontStyle: 'italic' }}>N/A</HistoryDate>
                              </HistoryItem>
                            )}
                            
@@ -705,25 +937,35 @@ export default function SubscriberDashboard() {
                              <HistoryItem>
                                <HistoryIcon type="receipt">R</HistoryIcon>
                                <HistoryText>Payment receipt uploaded</HistoryText>
-                               <HistoryDate>{new Date(subscription.subscription_receipt_date || subscription.sub_date).toLocaleDateString()}</HistoryDate>
+                               <HistoryDate>
+                                 {new Date(subscription.receipt_received_date || subscription.sub_date).toLocaleDateString()}
+                               </HistoryDate>
                              </HistoryItem>
                            )}
                            
-                           {subscription.sub_start_date && (
+                           {subscription.receipt_verified_date && (
                              <HistoryItem>
-                               <HistoryIcon type="receipt">S</HistoryIcon>
-                               <HistoryText>Subscription started</HistoryText>
-                               <HistoryDate>{new Date(subscription.sub_start_date).toLocaleDateString()}</HistoryDate>
+                               <HistoryIcon type="receipt">✓</HistoryIcon>
+                               <HistoryText>Receipt verified and subscription activated</HistoryText>
+                               <HistoryDate>{new Date(subscription.receipt_verified_date).toLocaleDateString()}</HistoryDate>
                              </HistoryItem>
                            )}
                            
-                           {subscription.sub_exp_date && (
-                             <HistoryItem>
-                               <HistoryIcon type="receipt">E</HistoryIcon>
-                               <HistoryText>Subscription expires</HistoryText>
-                               <HistoryDate>{new Date(subscription.sub_exp_date).toLocaleDateString()}</HistoryDate>
-                             </HistoryItem>
-                           )}
+                           {subscription.sub_start_date && (subscription.status !== 'pending' && subscription.sub_status !== 2) && (
+                         <HistoryItem>
+                           <HistoryIcon type="receipt">S</HistoryIcon>
+                           <HistoryText>Subscription started</HistoryText>
+                           <HistoryDate>{new Date(subscription.sub_start_date).toLocaleDateString()}</HistoryDate>
+                         </HistoryItem>
+                       )}
+                       
+                       {subscription.sub_exp_date && (subscription.status !== 'pending' && subscription.sub_status !== 2) && (
+                         <HistoryItem>
+                           <HistoryIcon type="receipt">E</HistoryIcon>
+                           <HistoryText>Subscription expires</HistoryText>
+                           <HistoryDate>{new Date(subscription.sub_exp_date).toLocaleDateString()}</HistoryDate>
+                         </HistoryItem>
+                       )}
                          </HistorySection>
                        </div>
                      </ExpandableContent>
@@ -739,9 +981,18 @@ export default function SubscriberDashboard() {
                            {subscription.sub_type} Subscription
                          </h3>
                          <div style={{ display: 'flex', gap: '16px', marginBottom: '8px', fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>
-                           <span>Amount: ${subscription.sub_amount}</span>
-                           <span>Start: {new Date(subscription.sub_start_date).toLocaleDateString()}</span>
-                           <span>End: {new Date(subscription.sub_exp_date).toLocaleDateString()}</span>
+                           {subscription.status !== 'pending' && subscription.sub_status !== 2 && (
+                             <>
+                               <span>Amount: ${subscription.sub_amount}</span>
+                               <span>Start: {new Date(subscription.sub_start_date).toLocaleDateString()}</span>
+                               <span>End: {new Date(subscription.sub_exp_date).toLocaleDateString()}</span>
+                             </>
+                           )}
+                           {subscription.status === 'pending' || subscription.sub_status === 2 ? (
+                             <span style={{ fontStyle: 'italic', color: 'var(--color-accent2)' }}>
+                               Details will be provided once approved
+                             </span>
+                           ) : null}
                          </div>
                        </div>
                        <StatusBadge status={subscription.status}>
@@ -759,36 +1010,15 @@ export default function SubscriberDashboard() {
                            <StepContent>
                              <StepTitle>{step.step}</StepTitle>
                              <StepDescription>{step.description}</StepDescription>
+                             {step.actionButton}
                            </StepContent>
                          </ProgressStep>
                        ))}
+                       
+
                      </ProgressSection>
 
                      <div style={{ marginTop: '16px', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                       {!hasInvoice && (
-                         <ActionButton 
-                           className="warning" 
-                           onClick={() => handleRequestInvoice(subscription.id)}
-                         >
-                           <FaExclamationTriangle style={{ marginRight: '8px' }} />
-                           Request Invoice
-                         </ActionButton>
-                       )}
-                       
-                       {hasInvoice && !hasReceipt && (
-                         <FileUploadSection>
-                           <UploadLabel>
-                             <FaUpload />
-                             Upload Payment Receipt
-                             <UploadInput
-                               type="file"
-                               accept=".pdf,.jpg,.jpeg,.png"
-                               onChange={(e) => handleUploadReceipt(subscription.id, e)}
-                             />
-                           </UploadLabel>
-                         </FileUploadSection>
-                       )}
-                       
                        {hasReceipt && (
                          <ActionButton className="success">
                            <FaCheckCircle style={{ marginRight: '8px' }} />
@@ -798,30 +1028,56 @@ export default function SubscriberDashboard() {
                      </div>
 
                      <HistorySection>
-                       <HistoryTitle>Subscription History</HistoryTitle>
+                       <HistoryTitle>Subscription Summary</HistoryTitle>
                        <HistoryItem>
                          <HistoryIcon type="order">O</HistoryIcon>
                          <HistoryText>Order form submitted</HistoryText>
                          <HistoryDate>{new Date(subscription.sub_date).toLocaleDateString()}</HistoryDate>
                        </HistoryItem>
                        
-                       {hasInvoice && (
+                       {hasInvoiceRequested && !hasInvoice && !isInvoiceNotRequired && (
                          <HistoryItem>
                            <HistoryIcon type="invoice">I</HistoryIcon>
-                           <HistoryText>Invoice received from admin</HistoryText>
-                           <HistoryDate>{new Date(subscription.subscription_invoice_date || subscription.sub_date).toLocaleDateString()}</HistoryDate>
+                           <HistoryText>Invoice requested</HistoryText>
+                           <HistoryDate>{new Date(subscription.invoice_requested_date).toLocaleDateString()}</HistoryDate>
                          </HistoryItem>
                        )}
                        
-                       {hasReceipt && (
+                                                  {hasInvoice && !isInvoiceNotRequired && (
+                             <HistoryItem>
+                               <HistoryIcon type="invoice">I</HistoryIcon>
+                               <HistoryText>Invoice received from admin</HistoryText>
+                               <HistoryDate>{new Date(subscription.invoice_received_date || subscription.sub_date).toLocaleDateString()}</HistoryDate>
+                             </HistoryItem>
+                           )}
+                       
+                       {isInvoiceNotRequired && (
                          <HistoryItem>
-                           <HistoryIcon type="receipt">R</HistoryIcon>
-                           <HistoryText>Payment receipt uploaded</HistoryText>
-                           <HistoryDate>{new Date(subscription.subscription_receipt_date || subscription.sub_date).toLocaleDateString()}</HistoryDate>
+                           <HistoryIcon type="invoice">I</HistoryIcon>
+                           <HistoryText>Invoice not required</HistoryText>
+                           <HistoryDate style={{ color: 'var(--color-success)', fontStyle: 'italic' }}>N/A</HistoryDate>
                          </HistoryItem>
                        )}
                        
-                       {subscription.sub_start_date && (
+                           {hasReceipt && (
+                             <HistoryItem>
+                               <HistoryIcon type="receipt">R</HistoryIcon>
+                               <HistoryText>Payment receipt uploaded</HistoryText>
+                               <HistoryDate>
+                                 {new Date(subscription.receipt_received_date || subscription.sub_date).toLocaleDateString()}
+                               </HistoryDate>
+                             </HistoryItem>
+                           )}
+                           
+                           {subscription.receipt_verified_date && (
+                             <HistoryItem>
+                               <HistoryIcon type="receipt">✓</HistoryIcon>
+                               <HistoryText>Receipt verified and subscription activated</HistoryText>
+                               <HistoryDate>{new Date(subscription.receipt_verified_date).toLocaleDateString()}</HistoryDate>
+                             </HistoryItem>
+                           )}
+                       
+                       {subscription.sub_start_date && (subscription.status !== 'pending' && subscription.sub_status !== 2) && (
                          <HistoryItem>
                            <HistoryIcon type="receipt">S</HistoryIcon>
                            <HistoryText>Subscription started</HistoryText>
@@ -829,7 +1085,7 @@ export default function SubscriberDashboard() {
                          </HistoryItem>
                        )}
                        
-                       {subscription.sub_exp_date && (
+                       {subscription.sub_exp_date && (subscription.status !== 'pending' && subscription.sub_status !== 2) && (
                          <HistoryItem>
                            <HistoryIcon type="receipt">E</HistoryIcon>
                            <HistoryText>Subscription expires</HistoryText>
@@ -850,8 +1106,16 @@ export default function SubscriberDashboard() {
            subscriberData={subscriber}
            onSubmit={handleUpdateSubscriberInfo}
            isUpdating={hasExistingData}
-         />
-       </RightPanel>
-     </DashboardContainer>
-   );
+                 />
+      </RightPanel>
+
+      <RenewalModal
+        isOpen={renewalModal.isOpen}
+        onClose={() => setRenewalModal({ isOpen: false, subscriptionType: null })}
+        subscriptionType={renewalModal.subscriptionType}
+        onSubmitOrderForm={handleSubmitOrderForm}
+        isSubmitting={createRenewalSubscription.isLoading}
+      />
+    </DashboardContainer>
+  );
 } 
