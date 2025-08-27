@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import DashboardStats from './DashboardStats';
+import { RevenueKPIs, OperationalKPIs } from './DashboardKPIs';
 import Card from './ui/Card';
 import { useGetDashboardStatsQuery } from '../api/apiSlice';
 import styled from 'styled-components';
@@ -15,8 +16,8 @@ import {
   PointElement,
   LineElement
 } from 'chart.js';
-import { useNavigate } from 'react-router-dom';
-import { SUBSCRIPTION_TYPES, getSubscriptionTypeColors } from '../config/subscriptionTypes';
+// import { useNavigate } from 'react-router-dom';
+import AdminSubscriptionRequestModal from './AdminSubscriptionRequestModal';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, ChartTooltip, ChartLegend, PointElement, LineElement);
 
@@ -52,7 +53,8 @@ const formatDate = (dateString) => {
 export default function Dashboard() {
   const [expiredLimit, setExpiredLimit] = useState(5);
   const { data } = useGetDashboardStatsQuery({ expiredLimit: expiredLimit.toString() });
-  const navigate = useNavigate();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalSubscriber, setModalSubscriber] = useState(null);
   
   const handleLoadMore = () => {
     setExpiredLimit(prev => prev + 5);
@@ -60,7 +62,6 @@ export default function Dashboard() {
 
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const revenue = data?.revenue || { total: 0, by_type: {}, monthly: [], historical: [] };
-  const subscriptionTypeColors = getSubscriptionTypeColors();
 
   // Historical revenue data
   const historicalRevenueData = {
@@ -118,13 +119,23 @@ export default function Dashboard() {
 
   const revenueData = {
     labels: months,
-    datasets: SUBSCRIPTION_TYPES.map(type => ({
-      label: type.displayName,
-      data: revenue.monthly.map(m => m[type.id] || 0),
-      backgroundColor: `${type.color}80`, // 80 = 50% opacity
-      borderColor: type.color,
-      borderWidth: 1
-    }))
+    datasets: [
+      {
+        label: 'eAIP',
+        data: revenue.monthly.map(m => m.eAIP),
+        backgroundColor: 'rgba(67, 233, 123, 0.5)',
+      },
+      {
+        label: 'CD',
+        data: revenue.monthly.map(m => m.CD),
+        backgroundColor: 'rgba(162, 89, 247, 0.5)',
+      },
+      {
+        label: 'Paper',
+        data: revenue.monthly.map(m => m.Paper),
+        backgroundColor: 'rgba(255, 77, 79, 0.5)',
+      }
+    ]
   };
 
   const chartOptions = {
@@ -158,11 +169,20 @@ export default function Dashboard() {
     }
   };
 
+  const openRenewalModal = (sub) => {
+    setModalSubscriber({ sub_id: sub.subscriber_id, sub_name: sub.sub_name });
+    sessionStorage.setItem('isRenewalRequest', 'true');
+    setIsModalOpen(true);
+  };
+
   return (
     <div style={{ padding: '32px 32px 0 32px', display: 'flex', gap: 32, flexWrap: 'wrap' }}>
       <div style={{ flex: 2, minWidth: 320 }}>
         <Card>
           <DashboardStats />
+        </Card>
+        <Card>
+          <RevenueKPIs />
         </Card>
         <HistoricalRevenueCard>
           <Line data={historicalRevenueData} options={historicalChartOptions} />
@@ -174,10 +194,12 @@ export default function Dashboard() {
         </ChartCardContainer>
       </div>
       <div style={{ flex: 1, minWidth: 320 }}>
-        <Card>
-          <h4>Upcoming Payments (30 days)</h4>
-          <ul style={{ listStyle: 'none', padding: 0 }}>
-            {data && data.upcoming.length > 0 ? data.upcoming.map(sub => {
+        <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+          <div style={{ flex: 1, minWidth: 280 }}>
+            <Card>
+              <h4>Upcoming Payments (30 days)</h4>
+              <ul style={{ listStyle: 'none', padding: 0 }}>
+                {data && data.upcoming.length > 0 ? data.upcoming.map(sub => {
               const daysUntilExpiry = Math.ceil((new Date(sub.sub_exp_date) - new Date()) / (1000 * 60 * 60 * 24));
               const isExpiringSoon = daysUntilExpiry <= 7;
               
@@ -214,7 +236,7 @@ export default function Dashboard() {
                       </div>
                     </div>
                     <button
-                      onClick={() => navigate(`/subscriber/${sub.subscriber_id}/edit-subscription/${sub.id}`)}
+                      onClick={() => openRenewalModal(sub)}
                       style={{
                         padding: '8px 16px',
                         background: isExpiringSoon ? 'var(--color-error)' : 'var(--color-primary)',
@@ -250,13 +272,13 @@ export default function Dashboard() {
                   </div>
                 </li>
               );
-            }) : <li style={{ color: 'var(--color-text-muted)' }}>No upcoming payments</li>}
-          </ul>
-        </Card>
-        <Card>
-          <h4>Expired Subscriptions (Last 12 Months)</h4>
-          <ul style={{ listStyle: 'none', padding: 0 }}>
-            {data && data.expired && data.expired.length > 0 ? data.expired.map(sub => {
+                }) : <li style={{ color: 'var(--color-text-muted)' }}>No upcoming payments</li>}
+              </ul>
+            </Card>
+            <Card>
+              <h4>Expired Subscriptions (Last 12 Months)</h4>
+              <ul style={{ listStyle: 'none', padding: 0 }}>
+                {data && data.expired && data.expired.length > 0 ? data.expired.map(sub => {
               const daysSinceExpiry = Math.ceil((new Date() - new Date(sub.sub_exp_date)) / (1000 * 60 * 60 * 24));
               const monthsSinceExpiry = Math.floor(daysSinceExpiry / 30);
               
@@ -293,7 +315,7 @@ export default function Dashboard() {
                       </div>
                     </div>
                     <button
-                      onClick={() => navigate(`/subscriber/${sub.subscriber_id}/edit-subscription/${sub.id}`)}
+                      onClick={() => openRenewalModal(sub)}
                       style={{
                         padding: '8px 16px',
                         background: 'var(--color-error)',
@@ -329,45 +351,60 @@ export default function Dashboard() {
                   </div>
                 </li>
               );
-            }) : <li style={{ color: 'var(--color-text-muted)' }}>No expired subscriptions</li>}
-          </ul>
-          {data && data.expired && data.expired.length > 0 && data.expired.length < data.total_expired && (
-            <div style={{ textAlign: 'center', marginTop: 16 }}>
-              <button
-                onClick={handleLoadMore}
-                style={{
-                  padding: '8px 24px',
-                  background: 'var(--color-bg)',
-                  color: 'var(--color-text)',
-                  border: '1px solid var(--color-border)',
-                  borderRadius: 6,
-                  cursor: 'pointer',
-                  fontSize: '0.875rem',
-                  fontWeight: 500,
-                  transition: 'all 0.2s ease',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  margin: '0 auto'
-                }}
-                onMouseOver={(e) => {
-                  e.target.style.background = 'var(--color-bg-card)';
-                  e.target.style.transform = 'translateY(-1px)';
-                }}
-                onMouseOut={(e) => {
-                  e.target.style.background = 'var(--color-bg)';
-                  e.target.style.transform = 'translateY(0)';
-                }}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 5v14M5 12h14"/>
-                </svg>
-                Load More
-              </button>
-            </div>
-          )}
-        </Card>
+                }) : <li style={{ color: 'var(--color-text-muted)' }}>No expired subscriptions</li>}
+              </ul>
+              {data && data.expired && data.expired.length > 0 && data.expired.length < data.total_expired && (
+                <div style={{ textAlign: 'center', marginTop: 16 }}>
+                  <button
+                    onClick={handleLoadMore}
+                    style={{
+                      padding: '8px 24px',
+                      background: 'var(--color-bg)',
+                      color: 'var(--color-text)',
+                      border: '1px solid var(--color-border)',
+                      borderRadius: 6,
+                      cursor: 'pointer',
+                      fontSize: '0.875rem',
+                      fontWeight: 500,
+                      transition: 'all 0.2s ease',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      margin: '0 auto'
+                    }}
+                    onMouseOver={(e) => {
+                      e.target.style.background = 'var(--color-bg-card)';
+                      e.target.style.transform = 'translateY(-1px)';
+                    }}
+                    onMouseOut={(e) => {
+                      e.target.style.background = 'var(--color-bg)';
+                      e.target.style.transform = 'translateY(0)';
+                    }}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 5v14M5 12h14"/>
+                    </svg>
+                    Load More
+                  </button>
+                </div>
+              )}
+            </Card>
+          </div>
+          <div style={{ flex: '0 0 98px' }}>
+            <Card style={{ padding: '12px' }}>
+              <OperationalKPIs />
+            </Card>
+          </div>
+        </div>
       </div>
+      {isModalOpen && (
+        <AdminSubscriptionRequestModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          subscriberDetails={modalSubscriber}
+          onSuccess={() => setIsModalOpen(false)}
+        />
+      )}
     </div>
   );
 } 

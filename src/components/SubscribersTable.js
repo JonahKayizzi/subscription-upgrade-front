@@ -17,9 +17,10 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
-import { FaUser, FaEnvelope, FaPhone, FaMapMarkerAlt, FaBox, FaInfoCircle, FaUserTie, FaCalendarAlt, FaRegBuilding, FaFileContract } from 'react-icons/fa';
+import { FaUser, FaEnvelope, FaPhone, FaMapMarkerAlt, FaBox, FaInfoCircle, FaUserTie, FaCalendarAlt, FaRegBuilding, FaFileContract, FaPlus } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import AddSubscriberForm from './AddSubscriberForm';
+import AdminSubscriptionRequestModal from './AdminSubscriptionRequestModal';
 import { SUBSCRIPTION_TYPES, getSubscriptionType, hasCredentials, hasDelivery } from '../config/subscriptionTypes';
 
 ChartJS.register(
@@ -363,6 +364,7 @@ export default function SubscribersTable() {
   const [selected, setSelected] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [addModalOpen, setAddModalOpen] = useState(false);
+  const [adminSubscriptionModalOpen, setAdminSubscriptionModalOpen] = useState(false);
   const [showEaipCredentials, setShowEaipCredentials] = useState(false);
   const [isEditingSubscriber, setIsEditingSubscriber] = useState(false);
   const [editedSubscriber, setEditedSubscriber] = useState(null);
@@ -750,16 +752,50 @@ export default function SubscribersTable() {
                     sub.status === 'active' || sub.status === 'pending'
                   );
                   
+                  // Check if any subscription is expiring soon (less than 3 months)
+                  const hasExpiringSoon = subscriberDetails.subscriptions.some(sub => {
+                    if (sub.sub_exp_date && sub.status === 'active') {
+                      const expiryDate = new Date(sub.sub_exp_date);
+                      const now = new Date();
+                      const monthsUntilExpiry = (expiryDate.getFullYear() - now.getFullYear()) * 12 + 
+                        (expiryDate.getMonth() - now.getMonth());
+                      return monthsUntilExpiry <= 3 && monthsUntilExpiry > 0;
+                    }
+                    return false;
+                  });
+
                   return hasCurrentOrPending ? (
-                    <ActionButton onClick={() => navigate(`/subscribers`)} style={{ marginBottom: 24 }}>
-                      <ActionIcon><FaFileContract /></ActionIcon>
-                      Manage Subscriptions
-                    </ActionButton>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: 24 }}>
+                      {hasExpiringSoon && (
+                        <ActionButton onClick={() => {
+                          setAdminSubscriptionModalOpen(true);
+                          // Set a flag to indicate this is a renewal request
+                          sessionStorage.setItem('isRenewalRequest', 'true');
+                        }} style={{ background: 'var(--color-warning)' }}>
+                          <ActionIcon><FaPlus /></ActionIcon>
+                          Initiate Renewal Request
+                        </ActionButton>
+                      )}
+                      <ActionButton onClick={() => navigate(`/subscribers`)}>
+                        <ActionIcon><FaFileContract /></ActionIcon>
+                        Manage Subscriptions
+                      </ActionButton>
+                    </div>
                   ) : (
-                    <ActionButton onClick={() => navigate(`/subscriber/${subscriberDetails.sub_id}/add-subscription`)} style={{ marginBottom: 24 }}>
-                      <ActionIcon><FaFileContract /></ActionIcon>
-                      Add Subscription
-                    </ActionButton>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: 24 }}>
+                      <ActionButton onClick={() => {
+                        setAdminSubscriptionModalOpen(true);
+                        // Clear the renewal flag for new subscription requests
+                        sessionStorage.removeItem('isRenewalRequest');
+                      }} style={{ background: 'var(--color-success)' }}>
+                        <ActionIcon><FaPlus /></ActionIcon>
+                        Initiate Subscription Request
+                      </ActionButton>
+                      <ActionButton onClick={() => navigate(`/subscriber/${subscriberDetails.sub_id}/add-subscription`)}>
+                        <ActionIcon><FaFileContract /></ActionIcon>
+                        Add Subscription Directly
+                      </ActionButton>
+                    </div>
                   );
                 })()}
                 <SectionTitle>Current Subscriptions</SectionTitle>
@@ -918,6 +954,17 @@ export default function SubscribersTable() {
           <ModalContentWrapper>Error loading details.</ModalContentWrapper>
         )}
       </Modal>
+
+      {/* Admin Subscription Request Modal */}
+      <AdminSubscriptionRequestModal
+        isOpen={adminSubscriptionModalOpen}
+        onClose={() => setAdminSubscriptionModalOpen(false)}
+        subscriberDetails={subscriberDetails}
+        onSuccess={() => {
+          // Refresh subscriber details after successful creation
+          if (refetch) refetch();
+        }}
+      />
     </Container>
   );
 } 
