@@ -92,11 +92,11 @@ const MainContent = styled.div`
 `;
 
 const Sidebar = styled.div`
-  flex: 1;
-  min-width: 320px;
+  flex: 0 0 272px;
+  min-width: 272px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
 `;
 
 const StatCard = styled.div`
@@ -564,7 +564,7 @@ export default function SubscribersTable() {
                 <tr style={{ background: 'rgba(162,89,247,0.08)' }}>
                   <th style={{ padding: 12, textAlign: 'left' }}>Name</th>
                   <th style={{ padding: 12, textAlign: 'left' }}>Email</th>
-                  <th style={{ padding: 12, textAlign: 'left' }}>Contact</th>
+                  <th style={{ padding: 12, textAlign: 'left', width: '15%' }}>Contact</th>
                   <th style={{ padding: 12, textAlign: 'left' }}>Subscription Status</th>
                   <th style={{ padding: 12, textAlign: 'left' }}>Actions</th>
                 </tr>
@@ -574,7 +574,7 @@ export default function SubscribersTable() {
                   <tr key={sub.sub_id} style={{ borderBottom: '1px solid var(--color-border)' }}>
                     <td style={{ padding: 12, textAlign: 'left' }}>{sub.sub_name}</td>
                     <td style={{ padding: 12, textAlign: 'left' }}>{sub.sub_email}</td>
-                    <td style={{ padding: 12, textAlign: 'left' }}>{sub.sub_telephone}</td>
+                    <td style={{ padding: 12, textAlign: 'left', width: '15%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sub.sub_telephone}</td>
                     <td style={{ padding: 12, textAlign: 'left' }}>
                       <StatusContainer>
                         <StatusBadge status={sub.subscription_status.eAIP}>eAIP</StatusBadge>
@@ -583,8 +583,8 @@ export default function SubscribersTable() {
                       </StatusContainer>
                     </td>
                     <td style={{ padding: 12, textAlign: 'left', display: 'flex', gap: 8 }}>
-                      <Button style={{ padding: '4px 12px', fontSize: 14 }} onClick={() => handleView(sub)}>View</Button>
-                      <Button style={{ padding: '4px 12px', fontSize: 14, background: 'var(--color-error)', color: '#fff' }} onClick={() => handleDelete(sub.sub_id)}>Delete</Button>
+                      <Button style={{ width: '50%', minWidth: 0, padding: '4px 12px', fontSize: 14 }} onClick={() => handleView(sub)}>View</Button>
+                      <Button style={{ width: '50%', minWidth: 0, padding: '4px 12px', fontSize: 14, background: 'var(--color-error)', color: '#fff' }} onClick={() => handleDelete(sub.sub_id)}>Delete</Button>
                     </td>
                   </tr>
                 ))}
@@ -649,7 +649,7 @@ export default function SubscribersTable() {
               <li key={sub.sub_id || sub.sub_name} style={{ marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
                 <span style={{ color: 'var(--color-text)' }}>{sub.sub_name} ({sub.lag_days} days)</span>
                 <Button 
-                  style={{ padding: '4px 10px', fontSize: 13, background: 'var(--color-error)', color: '#fff' }}
+                  style={{ width: '50%', minWidth: 0, padding: '4px 10px', fontSize: 13, background: 'var(--color-error)', color: '#fff' }}
                   onClick={() => handleDelete(sub.sub_id)}
                 >
                   Delete
