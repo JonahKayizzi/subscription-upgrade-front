@@ -180,15 +180,32 @@ export const apiSlice = createApi({
         body: updateData
       })
     }),
-    // Create renewal subscription
-    createRenewalSubscription: builder.mutation({
-      query: (renewalData) => ({
-        url: '/subscriber/create-renewal',
+      // Create renewal subscription
+  createRenewalSubscription: builder.mutation({
+    query: (renewalData) => ({
+      url: '/subscriber/create-renewal',
+      method: 'POST',
+      body: renewalData
+    })
+  }),
+
+  // Create admin subscription request
+  createAdminSubscription: builder.mutation({
+    query: (requestData) => ({
+      url: '/admin/create-subscription',
+      method: 'POST',
+      body: requestData
+    })
+  }),
+    
+    // Admin: set invoice request date (offline)
+    setInvoiceRequestDateAdmin: builder.mutation({
+      query: ({ subscriptionId, requestDate }) => ({
+        url: '/admin/set-invoice-request-date',
         method: 'POST',
-        body: renewalData
+        body: { subscriptionId, requestDate }
       })
     }),
-    
 
   }),
 });
@@ -217,4 +234,6 @@ export const {
   useSubmitSubscriptionOrderMutation,
   useUpdateSubscriberInfoMutation,
   useCreateRenewalSubscriptionMutation,
+  useCreateAdminSubscriptionMutation,
+  useSetInvoiceRequestDateAdminMutation,
 } = apiSlice; 

@@ -3,7 +3,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import styled from 'styled-components';
 import Button from './ui/Button';
 import Modal from './ui/Modal';
-import { useAddSubscriptionMutation, useGetSubscriberQuery, useAddSubscriberMutation, useGetSubscriptionQuery, useUpdateSubscriptionMutation, useRequestInvoiceMutation, useUploadReceiptMutation, useMarkInvoiceNotRequiredMutation, useUploadInvoiceMutation, useVerifyReceiptMutation } from '../api/apiSlice';
+import { useAddSubscriptionMutation, useGetSubscriberQuery, useAddSubscriberMutation, useGetSubscriptionQuery, useUpdateSubscriptionMutation, useRequestInvoiceMutation, useUploadReceiptMutation, useMarkInvoiceNotRequiredMutation, useUploadInvoiceMutation, useVerifyReceiptMutation, useSetInvoiceRequestDateAdminMutation } from '../api/apiSlice';
 import { FaEye, FaExclamationTriangle, FaTimes, FaDownload, FaUpload, FaCheckCircle, FaClock } from 'react-icons/fa';
 
 const MainContent = styled.div`
@@ -302,6 +302,7 @@ export default function SubscriptionForm() {
   const [markInvoiceNotRequired] = useMarkInvoiceNotRequiredMutation();
   const [uploadInvoice] = useUploadInvoiceMutation();
   const [verifyReceipt] = useVerifyReceiptMutation();
+  const [setInvoiceRequestDateAdmin] = useSetInvoiceRequestDateAdminMutation();
   const [form, setForm] = useState({
     sub_type: preselectedType,
     sub_start_date: '',
@@ -434,7 +435,7 @@ export default function SubscriptionForm() {
   };
 
   // Subscription Pipeline Logic
-  const hasOrderForm = !!subscriptionDetails?.subscription_form;
+  const hasOrderForm = !!subscriptionDetails?.subscription_form || !!subscriptionDetails?.order_sent_date;
   const hasInvoice = !!subscriptionDetails?.subscription_invoice;
   const isInvoiceNotRequired = subscriptionDetails?.invoice_no === 'NOT_REQUIRED';
   const hasInvoiceRequested = !!subscriptionDetails?.invoice_requested_date;
@@ -517,11 +518,8 @@ export default function SubscriptionForm() {
     
     try {
       setIsSettingInvoiceDate(true);
-      // This would need a new API endpoint to update the invoice_requested_date
-      // For now, we'll just update the local state
+      await setInvoiceRequestDateAdmin({ subscriptionId, requestDate: date }).unwrap();
       setManualInvoiceRequestDate(date);
-      console.log(`Invoice request date set to ${date} for subscription ${subscriptionId}`);
-      // TODO: Implement API call to update invoice_requested_date
     } catch (error) {
       console.error('Failed to set invoice request date:', error);
     } finally {

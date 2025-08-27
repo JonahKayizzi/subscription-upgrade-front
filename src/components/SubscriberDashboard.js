@@ -671,7 +671,7 @@ export default function SubscriberDashboard() {
           ) : (
             filteredSubscriptions.map(subscription => {
               // Determine progress based on subscription data
-              const hasOrderForm = subscription.subscription_form;
+              const hasOrderForm = subscription.subscription_form || subscription.order_sent_date;
               const hasInvoice = subscription.subscription_invoice;
               const hasReceipt = subscription.subscription_receipt;
               const hasInvoiceRequested = subscription.invoice_requested_date;
