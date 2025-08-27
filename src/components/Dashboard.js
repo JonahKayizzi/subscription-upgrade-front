@@ -238,6 +238,7 @@ export default function Dashboard() {
                     <button
                       onClick={() => openRenewalModal(sub)}
                       style={{
+                        width: '50%',
                         padding: '8px 16px',
                         background: isExpiringSoon ? 'var(--color-error)' : 'var(--color-primary)',
                         color: 'white',
@@ -317,6 +318,7 @@ export default function Dashboard() {
                     <button
                       onClick={() => openRenewalModal(sub)}
                       style={{
+                        width: '50%',
                         padding: '8px 16px',
                         background: 'var(--color-error)',
                         color: 'white',
