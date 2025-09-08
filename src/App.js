@@ -9,7 +9,7 @@ import SubscriptionOrderForm from './components/SubscriptionOrderForm';
 import { useSelector } from 'react-redux';
 import { Routes, Route } from 'react-router-dom';
 import styled from 'styled-components';
-import { FaMap, FaBook, FaChartBar, FaEnvelope, FaPhone, FaDatabase, FaCheckCircle, FaUserShield, FaRocket, FaCloud, FaRegFileAlt, FaCompactDisc, FaGlobe, FaMapMarkerAlt, FaFileAlt, FaExclamationTriangle, FaClipboardList } from 'react-icons/fa';
+import { FaMap, FaBook, FaChartBar, FaEnvelope, FaPhone, FaDatabase, FaCheckCircle, FaUserShield, FaRocket, FaCloud, FaRegFileAlt, FaCompactDisc, FaGlobe, FaMapMarkerAlt, FaFileAlt, FaExclamationTriangle } from 'react-icons/fa';
 const LandingContainer = styled.div`
   display: flex;
   min-height: 100vh;
@@ -751,15 +751,6 @@ function App() {
                         </ProductInfo>
                       </ProductCard>
                       
-                      <ProductCard>
-                        <ProductIcon gradient="linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)">
-                          <FaClipboardList />
-                        </ProductIcon>
-                        <ProductInfo>
-                          <ProductName>Checklists & NOTAM Lists</ProductName>
-                          <ProductDescription>Operational checklists and valid NOTAM compilations</ProductDescription>
-                        </ProductInfo>
-                      </ProductCard>
                       <ComingSoonBanner>
                         <DecorativeLines />
                         <ComingSoonTitle>COMING SOON</ComingSoonTitle>
