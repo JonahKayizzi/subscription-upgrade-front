@@ -616,6 +616,22 @@ function App() {
     return () => clearInterval(interval);
   }, [token, dispatch]);
 
+  // Handler for chart orders
+  const handleChartOrder = (chartId, chartName) => {
+    // Here you can implement your ordering logic
+    console.log(`Order initiated for chart: ${chartName} (ID: ${chartId})`);
+    
+    // Example: You could redirect to an order form, open a modal, or make an API call
+    // For now, just showing an alert as placeholder
+    alert(`Ordering system will be implemented for: ${Array.isArray(chartName) ? chartName[0] : chartName}`);
+    
+    // You can extend this to:
+    // - Navigate to an order page
+    // - Open a payment modal
+    // - Add to cart functionality
+    // - Send data to your backend API
+  };
+
   if (!token) {
     return (
       <LandingContainer>
@@ -752,7 +768,7 @@ function App() {
               </div>
             </div>
             
-            <AeronauticalCharts />
+            <AeronauticalCharts onOrderClick={handleChartOrder} />
             
             <PricingSection>
               {/* eAIP Card */}
