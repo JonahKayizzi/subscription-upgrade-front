@@ -7,6 +7,7 @@ import SubscriberDashboard from './components/SubscriberDashboard';
 import SubscribersTable from './components/SubscribersTable';
 import SubscriptionForm from './components/SubscriptionForm';
 import SubscriptionOrderForm from './components/SubscriptionOrderForm';
+import AeronauticalCharts from './components/AeronauticalCharts';
 // import AddSubscriptionPage from './components/AddSubscriptionPage';
 import { useSelector, useDispatch } from 'react-redux';
 import { Routes, Route } from 'react-router-dom';
@@ -14,6 +15,7 @@ import { logout } from './features/auth/authSlice';
 import { checkSessionTimeout } from './utils/sessionUtils';
 import styled from 'styled-components';
 import { FaMap, FaBook, FaChartBar, FaEnvelope, FaPhone, FaDatabase, FaCheckCircle, FaUserShield, FaRocket, FaCloud, FaRegFileAlt, FaCompactDisc, FaGlobe, FaMapMarkerAlt, FaFileAlt, FaExclamationTriangle } from 'react-icons/fa';
+
 const LandingContainer = styled.div`
   display: flex;
   min-height: 100vh;
@@ -407,73 +409,6 @@ const ProductsTitle = styled.h3`
   letter-spacing: 0.5px;
 `;
 
-
-
-const ProductsSpecs = styled.div`
-  display: flex;
-  gap: 20px;
-  margin-top: 4px;
-  
-  @media (max-width: 480px) {
-    flex-direction: column;
-    gap: 8px;
-  }
-`;
-
-const SpecItem = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-`;
-
-const SpecLabel = styled.span`
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #94a3b8;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-`;
-
-const SpecValue = styled.span`
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: #231942;
-`;
-
-const ProductsList = styled.ul`
-  margin: 8px 0 0 0;
-  padding: 0;
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-`;
-
-const ProductItem = styled.li`
-  font-size: 0.9rem;
-  color: #475569;
-  font-weight: 500;
-  
-  &::before {
-    content: '•';
-    color: #667eea;
-    font-weight: bold;
-    margin-right: 8px;
-  }
-`;
-
-const ProductsNote = styled.div`
-  font-size: 0.9rem;
-  color: #64748b;
-  font-weight: 600;
-  margin-top: 8px;
-  padding: 8px 12px;
-  background: #f8fafc;
-  border-radius: 6px;
-  border: 1px solid #e2e8f0;
-  display: inline-block;
-`;
-
 const ProductsGrid = styled.div`
   display: grid;
   grid-template-columns: 1fr 1fr 1fr 1fr;
@@ -579,6 +514,7 @@ const WelcomeContent = styled.div`
     gap: 16px;
   }
 `;
+
 const WelcomeText = styled.div`
   flex: 1;
 `;
@@ -609,16 +545,6 @@ const PricingBreakdown = styled.div`
   width: 100%;
 `;
 
-const BreakdownTitle = styled.h5`
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: ${({ dark }) => (dark ? '#fff' : '#1e293b')};
-  margin: 0 0 16px 0;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-`;
-
-// Update BreakdownTable and BreakdownCell for better alignment
 const BreakdownTable = styled.div`
   display: flex;
   flex-direction: column;
@@ -688,6 +614,22 @@ function App() {
 
     return () => clearInterval(interval);
   }, [token, dispatch]);
+
+  // Handler for chart orders
+  const handleChartOrder = (chartId, chartName) => {
+    // Here you can implement your ordering logic
+    console.log(`Order initiated for chart: ${chartName} (ID: ${chartId})`);
+    
+    // Example: You could redirect to an order form, open a modal, or make an API call
+    // For now, just showing an alert as placeholder
+    alert(`Ordering system will be implemented for: ${Array.isArray(chartName) ? chartName[0] : chartName}`);
+    
+    // You can extend this to:
+    // - Navigate to an order page
+    // - Open a payment modal
+    // - Add to cart functionality
+    // - Send data to your backend API
+  };
 
   if (!token) {
     return (
@@ -780,6 +722,9 @@ function App() {
                 </ProductsCard>
               </InfoCardHalf>
             </InfoCardsRow>
+            
+            <AeronauticalCharts onOrderClick={handleChartOrder} />
+            
             <PricingSection>
               {/* eAIP Card */}
               <PricingCard gradient="linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%)" dark>
@@ -879,7 +824,7 @@ function App() {
             </PricingSection>
           </LeftPanel>
           <RightPanel>
-          <SubscriptionOrderForm />
+            <SubscriptionOrderForm />
             <ContactCard>
               <ContactBranding>
                 <ContactLogo>AIP</ContactLogo>
