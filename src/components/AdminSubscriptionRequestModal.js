@@ -53,6 +53,38 @@ const FormGroup = styled.div`
       border-color: var(--color-accent2);
       box-shadow: 0 0 0 2px var(--color-accent2, rgba(162, 89, 247, 0.15));
     }
+    
+    /* Fix dropdown option styling */
+    option {
+      background: var(--color-background);
+      color: var(--color-text);
+      padding: 8px 12px;
+      
+      /* For better cross-browser support */
+      &:hover {
+        background: var(--color-bg-muted, #f5f5f5);
+        color: var(--color-text);
+      }
+      
+      &:checked {
+        background: var(--color-accent2, #a259f7);
+        color: white;
+      }
+    }
+    
+    /* Additional browser-specific fixes */
+    &::-webkit-scrollbar {
+      width: 8px;
+    }
+    
+    &::-webkit-scrollbar-track {
+      background: var(--color-bg-muted);
+    }
+    
+    &::-webkit-scrollbar-thumb {
+      background: var(--color-border);
+      border-radius: 4px;
+    }
   }
 `;
 
@@ -170,10 +202,54 @@ const AdminSubscriptionRequestModal = ({
                 onChange={handleChange}
                 required
               >
-                <option value="">Select Type</option>
-                <option value="eAIP">eAIP</option>
-                <option value="CD">CD</option>
-                <option value="Paper">Paper</option>
+                <option 
+                  value="" 
+                  style={{ 
+                    backgroundColor: '#f8fafc', 
+                    color: '#64748b', 
+                    fontStyle: 'italic',
+                    fontSize: '15px',
+                    padding: '12px 16px'
+                  }}
+                >
+                  Select Type
+                </option>
+                <option 
+                  value="eAIP" 
+                  style={{ 
+                    backgroundColor: '#ffffff', 
+                    color: '#2d3748', 
+                    fontWeight: '500',
+                    fontSize: '15px',
+                    padding: '12px 16px'
+                  }}
+                >
+                  📱 eAIP (Electronic)
+                </option>
+                <option 
+                  value="CD" 
+                  style={{ 
+                    backgroundColor: '#ffffff', 
+                    color: '#2d3748', 
+                    fontWeight: '500',
+                    fontSize: '15px',
+                    padding: '12px 16px'
+                  }}
+                >
+                  💿 CD (Compact Disc)
+                </option>
+                <option 
+                  value="Paper" 
+                  style={{ 
+                    backgroundColor: '#ffffff', 
+                    color: '#2d3748', 
+                    fontWeight: '500',
+                    fontSize: '15px',
+                    padding: '12px 16px'
+                  }}
+                >
+                  📄 Paper (Physical Copy)
+                </option>
               </select>
             </FormGroup>
           </FormGrid>
