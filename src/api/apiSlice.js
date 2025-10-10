@@ -207,6 +207,30 @@ export const apiSlice = createApi({
       })
     }),
 
+    // Chart orders
+    addChartOrder: builder.mutation({
+      query: (data) => ({
+        url: '/subscriber/submit-chart-order',
+        method: 'POST',
+        body: data,
+      }),
+    }),
+    getChartOrders: builder.query({
+      query: () => '/subscriber/chart-orders',
+    }),
+    getAllChartOrders: builder.query({
+      query: () => '/admin/chart-orders',
+    }),
+    getChartOrderDetails: builder.query({
+      query: (orderId) => `/admin/chart-orders/${orderId}`,
+    }),
+    updateChartOrderStatus: builder.mutation({
+      query: ({ orderId, status, admin_notes }) => ({
+        url: `/admin/chart-orders/${orderId}/status`,
+        method: 'PUT',
+        body: { status, admin_notes },
+      }),
+    }),
   }),
 });
 
@@ -235,5 +259,10 @@ export const {
   useUpdateSubscriberInfoMutation,
   useCreateRenewalSubscriptionMutation,
   useCreateAdminSubscriptionMutation,
-  useSetInvoiceRequestDateAdminMutation,
-} = apiSlice; 
+  useSetInvoiceRequestDateAdminMutation, 
+  useAddChartOrderMutation,
+  useGetChartOrdersQuery,
+  useGetAllChartOrdersQuery,
+  useGetChartOrderDetailsQuery,
+  useUpdateChartOrderStatusMutation,
+} = apiSlice;
