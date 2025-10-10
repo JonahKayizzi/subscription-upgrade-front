@@ -1,22 +1,27 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import { FaMap, FaCheckCircle, FaChevronDown, FaChevronUp } from 'react-icons/fa';
+import { useSelector } from 'react-redux';
+import ChartOrderForm from './ChartOrderForm';
+import Modal from './ui/Modal';
+import Login from './Login';
+import Register from './Register';
 
 // Styled Components
 const ChartsSection = styled.div`
-  background: #fff;
+  background: var(--color-bg-card);
   border-radius: 16px;
   box-shadow: 0 4px 24px rgba(0,0,0,0.08);
   padding: 32px;
   margin-bottom: 32px;
-  color: #1e293b;
+  color: var(--color-text);
   width: 100%;
 `;
 
 const ChartsSectionTitle = styled.h3`
   font-size: 1.8rem;
   font-weight: 700;
-  color: #2563eb;
+  color: var(--color-accent);
   margin: 0 0 24px 0;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -26,15 +31,15 @@ const ChartsSectionTitle = styled.h3`
 `;
 
 const ChartsTable = styled.div`
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   overflow: hidden;
   margin-bottom: 24px;
 `;
 
 const ChartsTableHeader = styled.div`
-  background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
-  color: white;
+  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent2) 100%);
+  color: var(--color-text);
   padding: 16px;
   display: grid;
   grid-template-columns: 2fr 1fr 2fr 1.5fr 1fr 0.8fr;
@@ -56,12 +61,12 @@ const ChartsTableRow = styled.div`
   display: grid;
   grid-template-columns: 2fr 1fr 2fr 1.5fr 1fr 0.8fr;
   gap: 16px;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid var(--color-border);
   align-items: center;
   transition: background-color 0.2s ease;
   
   &:hover {
-    background-color: #f8fafc;
+    background-color: var(--color-bg);
   }
   
   &:last-child {
@@ -78,19 +83,19 @@ const ChartsTableRow = styled.div`
 
 const ChartTitle = styled.div`
   font-weight: 600;
-  color: #1e293b;
+  color: var(--color-text);
   font-size: 0.9rem;
 `;
 
 const ChartScale = styled.div`
   font-size: 0.85rem;
-  color: #64748b;
+  color: var(--color-text-muted);
   font-weight: 500;
 `;
 
 const ChartName = styled.div`
   font-size: 0.85rem;
-  color: #475569;
+  color: var(--color-text-muted);
 `;
 
 const ChartPrices = styled.div`
@@ -98,13 +103,13 @@ const ChartPrices = styled.div`
   flex-direction: column;
   gap: 2px;
   font-size: 0.8rem;
-  color: #059669;
+  color: #10b981;
   font-weight: 600;
 `;
 
 const ChartDate = styled.div`
   font-size: 0.8rem;
-  color: #7c3aed;
+  color: var(--color-accent2);
   font-weight: 500;
   display: flex;
   align-items: center;
@@ -136,8 +141,8 @@ const OrderButton = styled.button`
 `;
 
 const ShowMoreButton = styled.button`
-  background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
-  color: white;
+  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent2) 100%);
+  color: var(--color-text);
   border: none;
   border-radius: 8px;
   padding: 12px 24px;
@@ -152,7 +157,7 @@ const ShowMoreButton = styled.button`
   
   &:hover {
     transform: translateY(-1px);
-    box-shadow: 0 6px 16px rgba(37, 99, 235, 0.3);
+    box-shadow: 0 6px 16px rgba(247, 184, 1, 0.3);
   }
   
   &:active {
@@ -162,26 +167,31 @@ const ShowMoreButton = styled.button`
 
 const ChartCounter = styled.div`
   text-align: center;
-  color: #64748b;
+  color: var(--color-text-muted);
   font-size: 0.9rem;
   margin-bottom: 16px;
   font-weight: 500;
 `;
 
 const ChartsNote = styled.div`
-  background: #fef3c7;
-  border: 1px solid #f59e0b;
+  background: rgba(247, 184, 1, 0.1);
+  border: 1px solid var(--color-accent);
   border-radius: 8px;
   padding: 16px;
   margin-top: 16px;
-  color: #92400e;
+  color: var(--color-accent);
   font-size: 0.9rem;
   line-height: 1.4;
 `;
 
 // Main Component
 const AeronauticalCharts = ({ onOrderClick }) => {
+  const isAuthenticated = useSelector(state => !!state.auth.token);
   const [showAllCharts, setShowAllCharts] = useState(false);
+  const [selectedChart, setSelectedChart] = useState(null);
+  const [showOrderForm, setShowOrderForm] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authMode, setAuthMode] = useState('login');
   
   const chartData = [
     // World and Area Charts
@@ -194,7 +204,7 @@ const AeronauticalCharts = ({ onOrderClick }) => {
       id: "wac-lake-albert"
     },
     {
-      title: "Aeronautical Chart – ICAO (ANC)",
+      title: "Aeronautical Chart - ICAO (ANC)",
       scale: "1: 500 000",
       name: ["Lake Albert 2909-A", "Lake Albert 2909-B", "Lake Albert 2909-C", "Lake Albert 2909-D"],
       prices: ["A0 size: 20 USD per sheet"],
@@ -494,7 +504,7 @@ const AeronauticalCharts = ({ onOrderClick }) => {
     
     // Visual Approach Chart - ICAO (VAC)
     {
-      title: "Visual Approach Chart – ICAO (VAC)",
+      title: "Visual Approach Chart - ICAO (VAC)",
       scale: "-",
       name: "ENTEBBE VISUAL APPROACH CHART ICAO",
       prices: ["A4 size: 5 USD"],
@@ -508,18 +518,42 @@ const AeronauticalCharts = ({ onOrderClick }) => {
   const remainingChartsCount = chartData.length - 5;
 
   const handleOrderClick = (chartId, chartName) => {
-    if (onOrderClick) {
-      onOrderClick(chartId, chartName);
-    } else {
-      // Default behavior if no callback is provided
-      console.log(`Order requested for chart: ${chartName} (ID: ${chartId})`);
-      alert(`Order functionality will be implemented for: ${chartName}`);
+    console.log('Order button clicked for chart:', chartId, chartName);
+    
+    // Find the selected chart first
+    const chart = chartData.find(c => c.id === chartId);
+    console.log('Found chart:', chart);
+    
+    if (!chart) {
+      console.error('Chart not found for ID:', chartId);
+      return;
     }
+    
+    // Store the selected chart
+    setSelectedChart(chart);
+    
+    // Check authentication
+    if (!isAuthenticated) {
+      console.log('User not authenticated, showing login modal');
+      setShowAuthModal(true);
+      return;
+    }
+    
+    // User is authenticated, show order form
+    setShowOrderForm(true);
+    console.log('Order form should now be open, showOrderForm:', true);
+  };
+
+  const handleCloseOrderForm = () => {
+    setShowOrderForm(false);
+    setSelectedChart(null);
   };
 
   const toggleShowCharts = () => {
     setShowAllCharts(!showAllCharts);
   };
+
+  console.log('AeronauticalCharts render - showOrderForm:', showOrderForm, 'selectedChart:', selectedChart);
 
   return (
     <ChartsSection>
@@ -584,7 +618,41 @@ const AeronauticalCharts = ({ onOrderClick }) => {
       
       <ChartsNote>
         <strong>Note:</strong> Charts can be bought in the local currency at the prevailing UCAA monthly exchange rate.
-        </ChartsNote>
+      </ChartsNote>
+      
+      {/* Chart Order Form Modal */}
+      <ChartOrderForm 
+        chart={selectedChart}
+        isOpen={showOrderForm}
+        onClose={handleCloseOrderForm}
+      />
+      
+      {/* Authentication Modal */}
+      <Modal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)}>
+        {authMode === 'login' ? (
+          <Login 
+            onSuccess={() => {
+              setShowAuthModal(false);
+              // After successful login, try to open the order form again
+              if (selectedChart) {
+                setShowOrderForm(true);
+              }
+            }} 
+            onSwitchMode={() => setAuthMode('register')} 
+          />
+        ) : (
+          <Register 
+            onSuccess={() => {
+              setShowAuthModal(false);
+              // After successful registration, try to open the order form again
+              if (selectedChart) {
+                setShowOrderForm(true);
+              }
+            }} 
+            onSwitchMode={() => setAuthMode('login')} 
+          />
+        )}
+      </Modal>
     </ChartsSection>
   );
 };
