@@ -8,13 +8,14 @@ import SubscribersTable from './components/SubscribersTable';
 import SubscriptionForm from './components/SubscriptionForm';
 import SubscriptionOrderForm from './components/SubscriptionOrderForm';
 import AeronauticalCharts from './components/AeronauticalCharts';
-// import AddSubscriptionPage from './components/AddSubscriptionPage';
-import { useSelector, useDispatch } from 'react-redux';
+import MyChartOrders from './components/MyChartOrders';
+import ChartOrdersManagement from './components/ChartOrdersManagement';
+import { useSelector } from 'react-redux';
 import { Routes, Route } from 'react-router-dom';
 import { logout } from './features/auth/authSlice';
 import { checkSessionTimeout } from './utils/sessionUtils';
 import styled from 'styled-components';
-import { FaMap, FaBook, FaChartBar, FaEnvelope, FaPhone, FaDatabase, FaCheckCircle, FaUserShield, FaRocket, FaCloud, FaRegFileAlt, FaCompactDisc, FaGlobe, FaMapMarkerAlt, FaFileAlt, FaExclamationTriangle } from 'react-icons/fa';
+import { FaMap, FaBook, FaEnvelope, FaPhone, FaCheckCircle, FaCloud, FaRegFileAlt, FaCompactDisc, FaGlobe, FaMapMarkerAlt, FaFileAlt, FaExclamationTriangle } from 'react-icons/fa';
 
 const LandingContainer = styled.div`
   display: flex;
@@ -535,7 +536,6 @@ const WelcomeDescription = styled.p`
   line-height: 1.5;
 `;
 
-// Pricing Breakdown Styled Components
 const PricingBreakdown = styled.div`
   margin-top: 0;
   padding: 0 0 24px 0;
@@ -588,6 +588,7 @@ const BreakdownCell = styled.span`
   }
 `;
 
+
 function App() {
   const token = useSelector(state => state.auth.token);
   const user = useSelector(state => state.auth.user);
@@ -614,22 +615,6 @@ function App() {
 
     return () => clearInterval(interval);
   }, [token, dispatch]);
-
-  // Handler for chart orders
-  const handleChartOrder = (chartId, chartName) => {
-    // Here you can implement your ordering logic
-    console.log(`Order initiated for chart: ${chartName} (ID: ${chartId})`);
-    
-    // Example: You could redirect to an order form, open a modal, or make an API call
-    // For now, just showing an alert as placeholder
-    alert(`Ordering system will be implemented for: ${Array.isArray(chartName) ? chartName[0] : chartName}`);
-    
-    // You can extend this to:
-    // - Navigate to an order page
-    // - Open a payment modal
-    // - Add to cart functionality
-    // - Send data to your backend API
-  };
 
   if (!token) {
     return (
@@ -767,7 +752,7 @@ function App() {
               </div>
             </div>
             
-            <AeronauticalCharts onOrderClick={handleChartOrder} />
+            <AeronauticalCharts />
             
             <PricingSection>
               {/* eAIP Card */}
@@ -804,7 +789,7 @@ function App() {
                   <FeatureItem><FaCheckCircle /> Email notifications for updates</FeatureItem>
                 </FeatureList>
               </PricingCard>
-              {/* Paper Card */}
+              
               <PricingCard gradient="linear-gradient(135deg, #f7b801 0%, #f59e42 100%)">
                 <PlanTitle><FaRegFileAlt /> Paper</PlanTitle>
                 <PriceRow>271.4-431.9<PriceUnit>USD/year</PriceUnit></PriceRow>
@@ -858,7 +843,7 @@ function App() {
                   <FeatureItem><FaCheckCircle /> Support for organizations and individuals</FeatureItem>
                 </FeatureList>
               </PricingCard>
-              {/* CD Card */}
+              
               <PricingCard gradient="linear-gradient(135deg, #a259f7 0%, #ec4899 100%)" dark>
                 <PlanTitle><FaCompactDisc /> CD</PlanTitle>
                 <PriceRow>82.6-200.6<PriceUnit>USD/year</PriceUnit></PriceRow>
@@ -938,23 +923,29 @@ function App() {
     );
   }
 
-  // Show the main app if authenticated
+  /// AUTHENTICATED - Show admin dashboard with routes
   return (
     <div className="App">
       <Sidebar />
-      <div className="main-content">
+      <div className="main-content" style={{ marginLeft: '250px', transition: 'margin-left 0.3s ease' }}>
         <Topbar />
-        <Routes>
-          <Route path="/" element={isAdmin ? <Dashboard /> : <SubscriberDashboard />} />
-          {isAdmin && (
-            <>
-          <Route path="/subscribers" element={<SubscribersTable />} />
-          <Route path="/subscriber/:id/add-subscription" element={<SubscriptionForm />} />
-          <Route path="/subscriber/:id/edit-subscription/:subscriptionId" element={<SubscriptionForm />} />
-            </>
-          )}
-          {/* <Route path="/add-subscription" element={<AddSubscriptionPage />} /> */}
-        </Routes>
+        <div style={{ padding: '20px', background: '#f5f5f5', minHeight: 'calc(100vh - 60px)' }}>
+          <Routes>
+            {/* Dashboard Routes */}
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            
+            {/* Subscriber Management Routes */}
+            <Route path="/subscribers" element={<SubscribersTable />} />
+            <Route path="/subscriber/:id/add-subscription" element={<SubscriptionForm />} />
+            <Route path="/subscriber/:id/edit-subscription/:subscriptionId" element={<SubscriptionForm />} />
+            
+            {/* Chart Order Routes */}
+            <Route path="/charts" element={<AeronauticalCharts />} />
+            <Route path="/my-orders" element={<MyChartOrders />} />
+            <Route path="/admin/chart-orders" element={<ChartOrdersManagement />} />
+          </Routes>
+        </div>
       </div>
     </div>
   );
