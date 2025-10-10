@@ -10,13 +10,12 @@ import SubscriptionOrderForm from './components/SubscriptionOrderForm';
 import AeronauticalCharts from './components/AeronauticalCharts';
 import MyChartOrders from './components/MyChartOrders';
 import ChartOrdersManagement from './components/ChartOrdersManagement';
-// import AddSubscriptionPage from './components/AddSubscriptionPage';
 import { useSelector } from 'react-redux';
 import { Routes, Route } from 'react-router-dom';
 import { logout } from './features/auth/authSlice';
 import { checkSessionTimeout } from './utils/sessionUtils';
 import styled from 'styled-components';
-import { FaMap, FaBook, FaChartBar, FaEnvelope, FaPhone, FaDatabase, FaCheckCircle, FaUserShield, FaRocket, FaCloud, FaRegFileAlt, FaCompactDisc, FaGlobe, FaMapMarkerAlt, FaFileAlt, FaExclamationTriangle } from 'react-icons/fa';
+import { FaMap, FaBook, FaEnvelope, FaPhone, FaCheckCircle, FaCloud, FaRegFileAlt, FaCompactDisc, FaGlobe, FaMapMarkerAlt, FaFileAlt, FaExclamationTriangle } from 'react-icons/fa';
 
 const LandingContainer = styled.div`
   display: flex;
@@ -617,22 +616,6 @@ function App() {
     return () => clearInterval(interval);
   }, [token, dispatch]);
 
-  // Handler for chart orders
-  const handleChartOrder = (chartId, chartName) => {
-    // Here you can implement your ordering logic
-    console.log(`Order initiated for chart: ${chartName} (ID: ${chartId})`);
-    
-    // Example: You could redirect to an order form, open a modal, or make an API call
-    // For now, just showing an alert as placeholder
-    alert(`Ordering system will be implemented for: ${Array.isArray(chartName) ? chartName[0] : chartName}`);
-    
-    // You can extend this to:
-    // - Navigate to an order page
-    // - Open a payment modal
-    // - Add to cart functionality
-    // - Send data to your backend API
-  };
-
   if (!token) {
     return (
       <LandingContainer>
@@ -771,7 +754,7 @@ function App() {
             
             <AeronauticalCharts />
             
-            <AeronauticalCharts onOrderClick={handleChartOrder} />
+            <AeronauticalCharts />
             
             <PricingSection>
               {/* eAIP Card */}
