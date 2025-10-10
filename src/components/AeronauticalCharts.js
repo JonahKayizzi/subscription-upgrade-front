@@ -553,6 +553,8 @@ const AeronauticalCharts = ({ onOrderClick }) => {
     setShowAllCharts(!showAllCharts);
   };
 
+  console.log('AeronauticalCharts render - showOrderForm:', showOrderForm, 'selectedChart:', selectedChart);
+
   return (
     <ChartsSection>
       <ChartsSectionTitle>
