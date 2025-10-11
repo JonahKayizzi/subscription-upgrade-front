@@ -407,12 +407,7 @@ const ProductsTitle = styled.h3`
   letter-spacing: 0.5px;
 `;
 
-const ProductsDescription = styled.p`
-  font-size: 0.95rem;
-  color: #64748b;
-  margin: 0;
-  line-height: 1.4;
-`;
+
 
 const ProductsSpecs = styled.div`
   display: flex;
@@ -560,10 +555,6 @@ const ProductDescription = styled.p`
   color: #64748b;
   margin: 0;
   line-height: 1.3;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
 `;
 
 const WelcomeBanner = styled.div`
