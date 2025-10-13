@@ -766,16 +766,47 @@ export default function SubscribersTable() {
 
                   return hasCurrentOrPending ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: 24 }}>
-                      {hasExpiringSoon && (
-                        <ActionButton onClick={() => {
-                          setAdminSubscriptionModalOpen(true);
-                          // Set a flag to indicate this is a renewal request
-                          sessionStorage.setItem('isRenewalRequest', 'true');
-                        }} style={{ background: 'var(--color-warning)' }}>
-                          <ActionIcon><FaPlus /></ActionIcon>
-                          Initiate Renewal Request
-                        </ActionButton>
-                      )}
+                      {hasExpiringSoon && (() => {
+                        // Find the subscription that's expiring soon
+                        const expiringSubscription = subscriberDetails.subscriptions.find(sub => {
+                          if (sub.sub_exp_date && sub.status === 'active') {
+                            const expiryDate = new Date(sub.sub_exp_date);
+                            const now = new Date();
+                            const monthsUntilExpiry = (expiryDate.getFullYear() - now.getFullYear()) * 12 + 
+                              (expiryDate.getMonth() - now.getMonth());
+                            return monthsUntilExpiry <= 3 && monthsUntilExpiry > 0;
+                          }
+                          return false;
+                        });
+                        
+                        return (
+                          <ActionButton onClick={() => {
+                            // Map subscription types to ensure they match form options
+                            const mapSubscriptionType = (type) => {
+                              if (!type) return '';
+                              const normalizedType = type.toString().trim();
+                              const typeMap = {
+                                'eAIP': 'eAIP', 'eaip': 'eAIP', 'EAIP': 'eAIP',
+                                'CD': 'CD', 'cd': 'CD', 'Cd': 'CD',
+                                'Paper': 'Paper', 'paper': 'Paper', 'PAPER': 'Paper'
+                              };
+                              return typeMap[normalizedType] || normalizedType;
+                            };
+                            
+                            setAdminSubscriptionModalOpen(true);
+                            // Set a flag to indicate this is a renewal request
+                            sessionStorage.setItem('isRenewalRequest', 'true');
+                            // Set the subscription type for pre-selection
+                            if (expiringSubscription) {
+                              const mappedType = mapSubscriptionType(expiringSubscription.sub_type);
+                              sessionStorage.setItem('renewalSubscriptionType', mappedType);
+                            }
+                          }} style={{ background: 'var(--color-warning)' }}>
+                            <ActionIcon><FaPlus /></ActionIcon>
+                            Initiate Renewal Request
+                          </ActionButton>
+                        );
+                      })()}
                       <ActionButton onClick={() => navigate(`/subscribers`)}>
                         <ActionIcon><FaFileContract /></ActionIcon>
                         Manage Subscriptions
