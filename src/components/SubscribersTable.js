@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useGetSubscribersQuery, useSearchSubscribersQuery, useDeleteSubscriberMutation, useGetSubscriberQuery, useUpdateSubscriberMutation } from '../api/apiSlice';
+import { useGetSubscribersQuery, useSearchSubscribersQuery, useDeleteSubscriberMutation, useGetSubscriberQuery, useUpdateSubscriberMutation, useGetAnnualSubscriptionReportQuery } from '../api/apiSlice';
 import Card from './ui/Card';
 import Button from './ui/Button';
 import Modal from './ui/Modal';
@@ -17,11 +17,12 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
-import { FaUser, FaEnvelope, FaPhone, FaMapMarkerAlt, FaBox, FaInfoCircle, FaUserTie, FaCalendarAlt, FaRegBuilding, FaFileContract, FaPlus } from 'react-icons/fa';
+import { FaUser, FaEnvelope, FaPhone, FaMapMarkerAlt, FaBox, FaInfoCircle, FaUserTie, FaCalendarAlt, FaRegBuilding, FaFileContract, FaPlus, FaFileExcel, FaDownload, FaSpinner } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import AddSubscriberForm from './AddSubscriberForm';
 import AdminSubscriptionRequestModal from './AdminSubscriptionRequestModal';
 import { SUBSCRIPTION_TYPES, getSubscriptionType, hasCredentials, hasDelivery } from '../config/subscriptionTypes';
+import { exportAnnualSubscriptionReport } from '../utils/excelExport';
 
 ChartJS.register(
   CategoryScale,
@@ -156,6 +157,16 @@ const ActionIcon = styled.span`
   display: flex;
   align-items: center;
   justify-content: center;
+`;
+
+const StatusMessage = styled.div`
+  margin-top: 8px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  background-color: ${props => props.success ? '#d4edda' : '#f8d7da'};
+  color: ${props => props.success ? '#155724' : '#721c24'};
+  border: 1px solid ${props => props.success ? '#c3e6cb' : '#f5c6cb'};
 `;
 
 const NotificationItem = styled.div`
@@ -368,7 +379,10 @@ export default function SubscribersTable() {
   const [showEaipCredentials, setShowEaipCredentials] = useState(false);
   const [isEditingSubscriber, setIsEditingSubscriber] = useState(false);
   const [editedSubscriber, setEditedSubscriber] = useState(null);
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportStatus, setExportStatus] = useState(null);
   const { data: subscriberDetails, isLoading: isLoadingDetails, refetch } = useGetSubscriberQuery(selected?.sub_id, { skip: !selected });
+  const { data: annualReportData, isLoading: isReportLoading } = useGetAnnualSubscriptionReportQuery();
   const navigate = useNavigate();
 
   React.useEffect(() => {
@@ -504,6 +518,53 @@ export default function SubscribersTable() {
     setEditedSubscriber(subscriberDetails);
   };
 
+  const handleExportAnnualReport = async () => {
+    setIsExporting(true);
+    setExportStatus(null);
+
+    try {
+      // Use comprehensive annual report data if available, otherwise fall back to current data
+      const reportData = annualReportData || data;
+      const reportSubscribers = annualReportData?.subscriptions?.map(sub => ({
+        sub_id: sub.subscriber_id,
+        sub_name: sub.sub_name,
+        sub_category: sub.sub_category,
+        sub_email: sub.sub_email,
+        sub_telephone: sub.sub_telephone,
+        phy_address: sub.phy_address,
+        subscription_status: {
+          eAIP: sub.sub_type === 'eAIP' ? sub.status : 'none',
+          CD: sub.sub_type === 'CD' ? sub.status : 'none',
+          Paper: sub.sub_type === 'Paper' ? sub.status : 'none'
+        }
+      })) || subscribers;
+      
+      const reportSubscriptions = annualReportData?.subscriptions || [];
+      
+      const result = exportAnnualSubscriptionReport(reportData, reportSubscribers, reportSubscriptions);
+
+      if (result.success) {
+        setExportStatus({
+          type: 'success',
+          message: result.message
+        });
+      } else {
+        setExportStatus({
+          type: 'error',
+          message: result.message || 'Export failed'
+        });
+      }
+    } catch (error) {
+      console.error('Export error:', error);
+      setExportStatus({
+        type: 'error',
+        message: 'An error occurred during export'
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const handleSubscriberDetailChange = (e) => {
     const { name, value } = e.target;
     setEditedSubscriber(prev => ({
@@ -613,10 +674,15 @@ export default function SubscribersTable() {
               <ActionIcon>🏷️</ActionIcon>
               Print Mailing Labels
             </ActionButton>
-            <ActionButton>
+            <ActionButton onClick={handleExportAnnualReport} disabled={isExporting}>
               <ActionIcon>📊</ActionIcon>
               Annual Subscription Report
             </ActionButton>
+            {exportStatus && (
+              <StatusMessage success={exportStatus.type === 'success'}>
+                {exportStatus.message}
+              </StatusMessage>
+            )}
         </Card>
 
         <Card>

@@ -18,7 +18,6 @@ import {
 } from 'chart.js';
 // import { useNavigate } from 'react-router-dom';
 import AdminSubscriptionRequestModal from './AdminSubscriptionRequestModal';
-import ExcelExportButton from './ExcelExportButton';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, ChartTooltip, ChartLegend, PointElement, LineElement);
 
@@ -183,11 +182,6 @@ export default function Dashboard() {
       <div style={{ flex: 2, minWidth: 320 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
           <h2 style={{ margin: 0, color: 'var(--color-text)' }}>Dashboard</h2>
-          <ExcelExportButton 
-            dashboardData={data}
-            subscribers={subscribersData?.subscribers || []}
-            subscriptions={subscriptionsData || []}
-          />
         </div>
         <Card>
           <DashboardStats />
