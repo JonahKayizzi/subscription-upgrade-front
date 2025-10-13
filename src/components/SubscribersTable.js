@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useGetSubscribersQuery, useSearchSubscribersQuery, useDeleteSubscriberMutation, useGetSubscriberQuery, useUpdateSubscriberMutation, useGetAnnualSubscriptionReportQuery } from '../api/apiSlice';
+import { useGetSubscribersQuery, useSearchSubscribersQuery, useDeleteSubscriberMutation, useGetSubscriberQuery, useUpdateSubscriberMutation, useGetAnnualSubscriptionReportQuery, useGetPaperSubscriptionsForMailingLabelsQuery } from '../api/apiSlice';
 import Card from './ui/Card';
 import Button from './ui/Button';
 import Modal from './ui/Modal';
@@ -23,6 +23,7 @@ import AddSubscriberForm from './AddSubscriberForm';
 import AdminSubscriptionRequestModal from './AdminSubscriptionRequestModal';
 import { SUBSCRIPTION_TYPES, getSubscriptionType, hasCredentials, hasDelivery } from '../config/subscriptionTypes';
 import { exportAnnualSubscriptionReport } from '../utils/excelExport';
+import { printMailingLabels, downloadMailingLabels } from '../utils/mailingLabels';
 
 ChartJS.register(
   CategoryScale,
@@ -381,8 +382,11 @@ export default function SubscribersTable() {
   const [editedSubscriber, setEditedSubscriber] = useState(null);
   const [isExporting, setIsExporting] = useState(false);
   const [exportStatus, setExportStatus] = useState(null);
+  const [isLoadingMailingLabels, setIsLoadingMailingLabels] = useState(false);
+  const [mailingLabelsStatus, setMailingLabelsStatus] = useState(null);
   const { data: subscriberDetails, isLoading: isLoadingDetails, refetch } = useGetSubscriberQuery(selected?.sub_id, { skip: !selected });
   const { data: annualReportData, isLoading: isReportLoading } = useGetAnnualSubscriptionReportQuery();
+  const { data: paperSubscriptionsData, isLoading: isLoadingPaperSubscriptions, refetch: refetchPaperSubscriptions } = useGetPaperSubscriptionsForMailingLabelsQuery(30);
   const navigate = useNavigate();
 
   React.useEffect(() => {
@@ -565,6 +569,37 @@ export default function SubscribersTable() {
     }
   };
 
+  const handlePrintMailingLabels = async () => {
+    setIsLoadingMailingLabels(true);
+    setMailingLabelsStatus(null);
+
+    try {
+      // Refetch the latest paper subscriptions data
+      const result = await refetchPaperSubscriptions();
+      
+      if (result.data && result.data.subscriptions && result.data.subscriptions.length > 0) {
+        printMailingLabels(result.data.subscriptions);
+        setMailingLabelsStatus({
+          type: 'success',
+          message: `Generated ${result.data.subscriptions.length} mailing labels for recent paper subscriptions`
+        });
+      } else {
+        setMailingLabelsStatus({
+          type: 'error',
+          message: 'No recent paper subscriptions found for mailing labels'
+        });
+      }
+    } catch (error) {
+      console.error('Error generating mailing labels:', error);
+      setMailingLabelsStatus({
+        type: 'error',
+        message: 'An error occurred while generating mailing labels'
+      });
+    } finally {
+      setIsLoadingMailingLabels(false);
+    }
+  };
+
   const handleSubscriberDetailChange = (e) => {
     const { name, value } = e.target;
     setEditedSubscriber(prev => ({
@@ -670,9 +705,9 @@ export default function SubscribersTable() {
               <ActionIcon>📋</ActionIcon>
               Print Dispatch List
             </ActionButton>
-            <ActionButton>
-              <ActionIcon>🏷️</ActionIcon>
-              Print Mailing Labels
+            <ActionButton onClick={handlePrintMailingLabels} disabled={isLoadingMailingLabels}>
+              <ActionIcon>{isLoadingMailingLabels ? <FaSpinner className="fa-spin" /> : '🏷️'}</ActionIcon>
+              {isLoadingMailingLabels ? 'Loading...' : 'Print Mailing Labels'}
             </ActionButton>
             <ActionButton onClick={handleExportAnnualReport} disabled={isExporting}>
               <ActionIcon>📊</ActionIcon>
@@ -681,6 +716,11 @@ export default function SubscribersTable() {
             {exportStatus && (
               <StatusMessage success={exportStatus.type === 'success'}>
                 {exportStatus.message}
+              </StatusMessage>
+            )}
+            {mailingLabelsStatus && (
+              <StatusMessage success={mailingLabelsStatus.type === 'success'}>
+                {mailingLabelsStatus.message}
               </StatusMessage>
             )}
         </Card>
