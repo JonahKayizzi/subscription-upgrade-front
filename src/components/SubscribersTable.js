@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useGetSubscribersQuery, useSearchSubscribersQuery, useDeleteSubscriberMutation, useGetSubscriberQuery, useUpdateSubscriberMutation } from '../api/apiSlice';
+import { useGetSubscribersQuery, useSearchSubscribersQuery, useDeleteSubscriberMutation, useGetSubscriberQuery, useUpdateSubscriberMutation, useGetNotificationsQuery } from '../api/apiSlice';
 import Card from './ui/Card';
 import Button from './ui/Button';
 import Modal from './ui/Modal';
@@ -369,7 +369,21 @@ export default function SubscribersTable() {
   const [isEditingSubscriber, setIsEditingSubscriber] = useState(false);
   const [editedSubscriber, setEditedSubscriber] = useState(null);
   const { data: subscriberDetails, isLoading: isLoadingDetails, refetch } = useGetSubscriberQuery(selected?.sub_id, { skip: !selected });
+  const { data: notificationsData, isLoading: isLoadingNotifications } = useGetNotificationsQuery();
   const navigate = useNavigate();
+
+  // Helper function to format time ago
+  const formatTimeAgo = (timestamp) => {
+    const now = new Date();
+    const time = new Date(timestamp);
+    const diffInSeconds = Math.floor((now - time) / 1000);
+    
+    if (diffInSeconds < 60) return 'Just now';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} days ago`;
+    return `${Math.floor(diffInSeconds / 604800)} weeks ago`;
+  };
 
   React.useEffect(() => {
     if (subscriberDetails) {
@@ -620,6 +634,35 @@ export default function SubscribersTable() {
         </Card>
 
         <Card>
+          <h4>Recent Notifications</h4>
+          {isLoadingNotifications ? (
+            <div style={{ textAlign: 'center', padding: '20px', color: 'var(--color-text-muted)' }}>
+              Loading notifications...
+            </div>
+          ) : notificationsData?.notifications?.length > 0 ? (
+            notificationsData.notifications.slice(0, 3).map((notification, index) => (
+              <NotificationItem key={notification.id || index}>
+                <div style={{ 
+                  color: notification.type === 'error' ? 'var(--color-error)' : 
+                         notification.type === 'success' ? 'var(--color-success)' :
+                         notification.type === 'warning' ? 'var(--color-warning)' : 
+                         'var(--color-accent2)'
+                }}>
+                  {notification.message}
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>
+                  {formatTimeAgo(notification.timestamp)}
+                </div>
+              </NotificationItem>
+            ))
+          ) : (
+            <div style={{ textAlign: 'center', padding: '20px', color: 'var(--color-text-muted)' }}>
+              No recent notifications
+            </div>
+          )}
+        </Card>
+
+        <Card>
           <h4>Statistics</h4>
           <StatCard>
             <StatLabel>Active Subscribers</StatLabel>
@@ -659,22 +702,6 @@ export default function SubscribersTable() {
               <li style={{ color: 'var(--color-text-muted)' }}>No dormant subscribers found.</li>
             )}
           </ul>
-        </Card>
-
-        <Card>
-          <h4>Recent Notifications</h4>
-          <NotificationItem>
-            <div style={{ color: 'var(--color-error)' }}>3 subscriptions expired today</div>
-            <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>2 hours ago</div>
-          </NotificationItem>
-          <NotificationItem>
-            <div style={{ color: 'var(--color-success)' }}>5 new subscriptions added</div>
-            <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>5 hours ago</div>
-          </NotificationItem>
-          <NotificationItem>
-            <div style={{ color: 'var(--color-accent2)' }}>2 subscribers updated their information</div>
-            <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>1 day ago</div>
-          </NotificationItem>
         </Card>
 
       </Sidebar>
