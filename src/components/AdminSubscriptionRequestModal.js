@@ -110,10 +110,41 @@ const AdminSubscriptionRequestModal = ({
     set_as_pending: true
   });
 
+  // Map subscription types to ensure they match form options
+  const mapSubscriptionType = (type) => {
+    if (!type) return '';
+    
+    // Handle case sensitivity and variations
+    const normalizedType = type.toString().trim();
+    
+    // Map common variations to form values
+    const typeMap = {
+      'eAIP': 'eAIP',
+      'eaip': 'eAIP',
+      'EAIP': 'eAIP',
+      'CD': 'CD',
+      'cd': 'CD',
+      'Cd': 'CD',
+      'Paper': 'Paper',
+      'paper': 'Paper',
+      'PAPER': 'Paper'
+    };
+    
+    return typeMap[normalizedType] || normalizedType;
+  };
+
   useEffect(() => {
     if (isOpen && subscriberDetails) {
+      // Check if this is a renewal request and get the subscription type
+      const renewalType = sessionStorage.getItem('renewalSubscriptionType');
+      console.log('🔍 Modal opened - Raw renewal type:', JSON.stringify(renewalType));
+      
+      const mappedType = mapSubscriptionType(renewalType);
+      console.log('🔍 Mapped renewal type:', JSON.stringify(mappedType));
+      console.log('🔍 Available option values: ["", "eAIP", "CD", "Paper"]');
+      
       setForm({
-        sub_type: '',
+        sub_type: mappedType,
         set_as_pending: true
       });
     }
@@ -122,10 +153,12 @@ const AdminSubscriptionRequestModal = ({
   // Check if this is a renewal request
   const isRenewal = sessionStorage.getItem('isRenewalRequest') === 'true';
 
+
   // Clean up session storage when modal closes
   useEffect(() => {
     if (!isOpen) {
       sessionStorage.removeItem('isRenewalRequest');
+      sessionStorage.removeItem('renewalSubscriptionType');
     }
   }, [isOpen]);
 
@@ -159,6 +192,7 @@ const AdminSubscriptionRequestModal = ({
       }).unwrap();
 
       sessionStorage.removeItem('isRenewalRequest');
+      sessionStorage.removeItem('renewalSubscriptionType');
       onClose();
       // Navigate to edit-subscription for the newly created subscription
       if (result?.subscriptionId) {
