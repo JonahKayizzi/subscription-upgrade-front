@@ -780,16 +780,73 @@ function App() {
                 </ProductsCard>
               </InfoCardHalf>
             </InfoCardsRow>
+            {/* VAT Inclusive Disclaimer Banner */}
+            <div style={{
+              background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+              color: '#ffffff',
+              padding: '16px 24px',
+              borderRadius: '12px',
+              marginBottom: '24px',
+              textAlign: 'center',
+              boxShadow: '0 4px 16px rgba(239, 68, 68, 0.3)',
+              border: '2px solid #fecaca',
+              position: 'relative',
+              overflow: 'hidden'
+            }}>
+              <div style={{
+                position: 'absolute',
+                top: '-50%',
+                left: '-50%',
+                width: '200%',
+                height: '200%',
+                background: 'url("data:image/svg+xml,%3Csvg width=\'40\' height=\'40\' viewBox=\'0 0 40 40\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'0.1\'%3E%3Cpath d=\'M20 20c0-11.046-8.954-20-20-20v20h20z\'/%3E%3C/g%3E%3C/svg%3E")',
+                animation: 'float 15s ease-in-out infinite',
+                zIndex: 1
+              }} />
+              <div style={{ position: 'relative', zIndex: 2 }}>
+                <h3 style={{
+                  margin: '0 0 8px 0',
+                  fontSize: '1.4rem',
+                  fontWeight: '900',
+                  textShadow: '0 2px 4px rgba(0,0,0,0.3)',
+                  letterSpacing: '0.5px'
+                }}>
+                  ⚠️ IMPORTANT: ALL PRICES INCLUDE 18% VAT ⚠️
+                </h3>
+                <p style={{
+                  margin: '0',
+                  fontSize: '1rem',
+                  fontWeight: '600',
+                  opacity: '0.95',
+                  textShadow: '0 1px 2px rgba(0,0,0,0.2)'
+                }}>
+                  Prices shown are final amounts including 18% VAT
+                </p>
+              </div>
+            </div>
             <PricingSection>
               {/* eAIP Card */}
               <PricingCard gradient="linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%)" dark>
                 <PlanTitle><FaCloud /> eAIP</PlanTitle>
-                <PriceRow>170<PriceUnit>USD/year</PriceUnit></PriceRow>
+                <PriceRow>200.6<PriceUnit>USD/year</PriceUnit></PriceRow>
+                <div style={{
+                  fontSize: '0.9rem',
+                  fontWeight: '600',
+                  color: '#ffffff',
+                  textAlign: 'center',
+                  marginBottom: '16px',
+                  padding: '8px 12px',
+                  background: 'rgba(255, 255, 255, 0.2)',
+                  borderRadius: '6px',
+                  border: '1px solid rgba(255, 255, 255, 0.3)'
+                }}>
+                  ✅ INCLUDES 18% VAT
+                </div>
                 <PricingBreakdown>
                   <BreakdownTable>
                     <BreakdownRow>
                       <BreakdownHeader>Online AIP (web-based)</BreakdownHeader>
-                      <BreakdownCell>170 USD</BreakdownCell>
+                      <BreakdownCell>200.6 USD</BreakdownCell>
                     </BreakdownRow>
                   </BreakdownTable>
                 </PricingBreakdown>
@@ -805,32 +862,45 @@ function App() {
               {/* Paper Card */}
               <PricingCard gradient="linear-gradient(135deg, #f7b801 0%, #f59e42 100%)">
                 <PlanTitle><FaRegFileAlt /> Paper</PlanTitle>
-                <PriceRow>230-293<PriceUnit>USD/year</PriceUnit></PriceRow>
+                <PriceRow>271.4-431.9<PriceUnit>USD/year</PriceUnit></PriceRow>
+                <div style={{
+                  fontSize: '0.9rem',
+                  fontWeight: '600',
+                  color: '#231942',
+                  textAlign: 'center',
+                  marginBottom: '16px',
+                  padding: '8px 12px',
+                  background: 'rgba(35, 25, 66, 0.1)',
+                  borderRadius: '6px',
+                  border: '1px solid rgba(35, 25, 66, 0.2)'
+                }}>
+                  ✅ INCLUDES 18% VAT
+                </div>
                 <PricingBreakdown>
                   <BreakdownTable>
                     <BreakdownRow>
                       <BreakdownHeader>Hand delivery</BreakdownHeader>
-                      <BreakdownCell>230 USD</BreakdownCell>
+                      <BreakdownCell>271.4 USD</BreakdownCell>
                     </BreakdownRow>
                     <BreakdownRow>
                       <BreakdownHeader>Within country</BreakdownHeader>
-                      <BreakdownCell>293 USD</BreakdownCell>
+                      <BreakdownCell>345.7 USD</BreakdownCell>
                     </BreakdownRow>
                     <BreakdownRow>
                       <BreakdownHeader>Within Africa</BreakdownHeader>
-                      <BreakdownCell>293 USD</BreakdownCell>
+                      <BreakdownCell>385.9 USD</BreakdownCell>
                     </BreakdownRow>
                     <BreakdownRow>
                       <BreakdownHeader>Rest of world</BreakdownHeader>
-                      <BreakdownCell>293 USD</BreakdownCell>
+                      <BreakdownCell>431.9 USD</BreakdownCell>
                     </BreakdownRow>
                     <BreakdownRow>
                       <BreakdownHeader>AIP Binder</BreakdownHeader>
-                      <BreakdownCell>46 USD </BreakdownCell>
+                      <BreakdownCell>54.3 USD </BreakdownCell>
                     </BreakdownRow>
                     <BreakdownRow>
                       <BreakdownHeader>AIC Set (AICs and AIC covers)</BreakdownHeader>
-                      <BreakdownCell>131 USD</BreakdownCell>
+                      <BreakdownCell>154.6 USD</BreakdownCell>
                     </BreakdownRow>
                   </BreakdownTable>
                 </PricingBreakdown>
@@ -846,24 +916,37 @@ function App() {
               {/* CD Card */}
               <PricingCard gradient="linear-gradient(135deg, #a259f7 0%, #ec4899 100%)" dark>
                 <PlanTitle><FaCompactDisc /> CD</PlanTitle>
-                <PriceRow>70-170<PriceUnit>USD/year</PriceUnit></PriceRow>
+                <PriceRow>82.6-200.6<PriceUnit>USD/year</PriceUnit></PriceRow>
+                <div style={{
+                  fontSize: '0.9rem',
+                  fontWeight: '600',
+                  color: '#ffffff',
+                  textAlign: 'center',
+                  marginBottom: '16px',
+                  padding: '8px 12px',
+                  background: 'rgba(255, 255, 255, 0.2)',
+                  borderRadius: '6px',
+                  border: '1px solid rgba(255, 255, 255, 0.3)'
+                }}>
+                  ✅ INCLUDES 18% VAT
+                </div>
                 <PricingBreakdown>
                   <BreakdownTable>
                     <BreakdownRow>
                       <BreakdownHeader dark>Hand delivery</BreakdownHeader>
-                      <BreakdownCell dark>70 USD</BreakdownCell>
+                      <BreakdownCell dark>82.6 USD</BreakdownCell>
                     </BreakdownRow>
                     <BreakdownRow>
                       <BreakdownHeader dark>Within country</BreakdownHeader>
-                      <BreakdownCell dark>100 USD</BreakdownCell>
+                      <BreakdownCell dark>118.0 USD</BreakdownCell>
                     </BreakdownRow>
                     <BreakdownRow>
                       <BreakdownHeader dark>Within Africa</BreakdownHeader>
-                      <BreakdownCell dark>130 USD</BreakdownCell>
+                      <BreakdownCell dark>153.4 USD</BreakdownCell>
                     </BreakdownRow>
                     <BreakdownRow>
                       <BreakdownHeader dark>Rest of world</BreakdownHeader>
-                      <BreakdownCell dark>170 USD</BreakdownCell>
+                      <BreakdownCell dark>200.6 USD</BreakdownCell>
                     </BreakdownRow>
                   </BreakdownTable>
                 </PricingBreakdown>
