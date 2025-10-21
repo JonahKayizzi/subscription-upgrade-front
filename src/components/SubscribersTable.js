@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useGetSubscribersQuery, useSearchSubscribersQuery, useDeleteSubscriberMutation, useGetSubscriberQuery, useUpdateSubscriberMutation, useGetAnnualSubscriptionReportQuery } from '../api/apiSlice';
+import { useGetSubscribersQuery, useSearchSubscribersQuery, useDeleteSubscriberMutation, useGetSubscriberQuery, useUpdateSubscriberMutation, useGetAnnualSubscriptionReportQuery, useGetNotificationsQuery } from '../api/apiSlice';
 import Card from './ui/Card';
 import Button from './ui/Button';
 import Modal from './ui/Modal';
@@ -365,6 +365,7 @@ const HistoryTable = styled.table`
 `;
 
 export default function SubscribersTable() {
+  const navigate = useNavigate();
   const globalSearchQuery = useSelector(state => state.search.query);
   const { data: allData, isLoading: isLoadingAll, error: allError } = useGetSubscribersQuery(undefined, { skip: globalSearchQuery !== '' });
   const { data: searchData, isLoading: isLoadingSearch, error: searchError } = useSearchSubscribersQuery(globalSearchQuery, {
@@ -383,7 +384,10 @@ export default function SubscribersTable() {
   const [exportStatus, setExportStatus] = useState(null);
   const { data: subscriberDetails, isLoading: isLoadingDetails, refetch } = useGetSubscriberQuery(selected?.sub_id, { skip: !selected });
   const { data: annualReportData, isLoading: isReportLoading } = useGetAnnualSubscriptionReportQuery();
+  const { data: notificationsData, isLoading: isLoadingNotifications } = useGetNotificationsQuery();
+  
   // Helper function to format time ago
+  const formatTimeAgo = (timestamp) => {
     const now = new Date();
     const time = new Date(timestamp);
     const diffInSeconds = Math.floor((now - time) / 1000);
