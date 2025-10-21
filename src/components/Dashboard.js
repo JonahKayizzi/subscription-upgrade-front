@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import DashboardStats from './DashboardStats';
 import { RevenueKPIs, OperationalKPIs } from './DashboardKPIs';
 import Card from './ui/Card';
-import { useGetDashboardStatsQuery } from '../api/apiSlice';
+import { useGetDashboardStatsQuery, useGetSubscribersQuery, useGetSubscriptionsQuery } from '../api/apiSlice';
 import styled from 'styled-components';
 import { Bar, Line } from 'react-chartjs-2';
 import {
@@ -18,6 +18,7 @@ import {
 } from 'chart.js';
 // import { useNavigate } from 'react-router-dom';
 import AdminSubscriptionRequestModal from './AdminSubscriptionRequestModal';
+import ExcelExportButton from './ExcelExportButton';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, ChartTooltip, ChartLegend, PointElement, LineElement);
 
@@ -53,6 +54,8 @@ const formatDate = (dateString) => {
 export default function Dashboard() {
   const [expiredLimit, setExpiredLimit] = useState(5);
   const { data } = useGetDashboardStatsQuery({ expiredLimit: expiredLimit.toString() });
+  const { data: subscribersData } = useGetSubscribersQuery();
+  const { data: subscriptionsData } = useGetSubscriptionsQuery();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalSubscriber, setModalSubscriber] = useState(null);
   
@@ -178,6 +181,14 @@ export default function Dashboard() {
   return (
     <div style={{ padding: '32px 32px 0 32px', display: 'flex', gap: 32, flexWrap: 'wrap' }}>
       <div style={{ flex: 2, minWidth: 320 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <h2 style={{ margin: 0, color: 'var(--color-text)' }}>Dashboard</h2>
+          <ExcelExportButton 
+            dashboardData={data}
+            subscribers={subscribersData?.subscribers || []}
+            subscriptions={subscriptionsData || []}
+          />
+        </div>
         <Card>
           <DashboardStats />
         </Card>

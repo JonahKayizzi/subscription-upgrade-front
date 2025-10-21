@@ -1007,6 +1007,35 @@ export default function SubscriptionForm() {
             </div>
           )}
           <Title>Add New Subscription</Title>
+          
+          {/* VAT Inclusive Disclaimer */}
+          <div style={{
+            background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+            color: '#ffffff',
+            padding: '12px 16px',
+            borderRadius: '8px',
+            marginBottom: '24px',
+            textAlign: 'center',
+            boxShadow: '0 2px 8px rgba(239, 68, 68, 0.3)',
+            border: '2px solid #fecaca'
+          }}>
+            <div style={{
+              fontSize: '1rem',
+              fontWeight: '700',
+              marginBottom: '4px',
+              textShadow: '0 1px 2px rgba(0,0,0,0.3)'
+            }}>
+              ⚠️ ALL PRICES INCLUDE 18% VAT ⚠️
+            </div>
+            <div style={{
+              fontSize: '0.85rem',
+              fontWeight: '500',
+              opacity: '0.9'
+            }}>
+              Prices shown are final amounts including 18% VAT
+            </div>
+          </div>
+          
           <form onSubmit={handleSubmit} encType="multipart/form-data">
             <FormGrid>
               <FormGroup>
