@@ -172,9 +172,40 @@ export default function Dashboard() {
     }
   };
 
+  // Map subscription types to ensure they match form options
+  const mapSubscriptionType = (type) => {
+    if (!type) return '';
+    
+    // Handle case sensitivity and variations
+    const normalizedType = type.toString().trim();
+    
+    // Map common variations to form values
+    const typeMap = {
+      'eAIP': 'eAIP',
+      'eaip': 'eAIP',
+      'EAIP': 'eAIP',
+      'CD': 'CD',
+      'cd': 'CD',
+      'Cd': 'CD',
+      'Paper': 'Paper',
+      'paper': 'Paper',
+      'PAPER': 'Paper'
+    };
+    
+    return typeMap[normalizedType] || normalizedType;
+  };
+
   const openRenewalModal = (sub) => {
+    console.log('🔍 Dashboard - Opening renewal modal for subscription:', sub);
+    console.log('🔍 Raw subscription type from API:', JSON.stringify(sub.sub_type));
+    console.log('🔍 All subscription fields:', Object.keys(sub));
+    
+    const mappedType = mapSubscriptionType(sub.sub_type);
+    console.log('🔍 Mapped subscription type:', JSON.stringify(mappedType));
+    
     setModalSubscriber({ sub_id: sub.subscriber_id, sub_name: sub.sub_name });
     sessionStorage.setItem('isRenewalRequest', 'true');
+    sessionStorage.setItem('renewalSubscriptionType', mappedType);
     setIsModalOpen(true);
   };
 
