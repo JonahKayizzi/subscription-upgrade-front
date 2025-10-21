@@ -571,7 +571,7 @@ const AeronauticalCharts = ({ onOrderClick }) => {
           <div>Scale</div>
           <div>Name and/or Number</div>
           <div>Price ($)</div>
-          <div>Date</div>
+          <div>Update Date</div>
           <div>Order</div>
         </ChartsTableHeader>
         

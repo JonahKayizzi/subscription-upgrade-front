@@ -45,7 +45,7 @@ const LeftPanel = styled.div`
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  padding: 0 16px 4px 0;
+  padding: 0 0 4px 0;
   margin-left: 0;
   background: transparent;
   overflow-y: auto;
@@ -752,10 +752,6 @@ function App() {
               </div>
             </div>
             
-            <AeronauticalCharts />
-            
-            <AeronauticalCharts />
-            
             <PricingSection>
               {/* eAIP Card */}
               <PricingCard gradient="linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%)" dark>
@@ -892,6 +888,10 @@ function App() {
                 </FeatureList>
               </PricingCard>
             </PricingSection>
+            
+            <div style={{ marginTop: '32px', width: '100%', marginRight: '20px' }}>
+              <AeronauticalCharts />
+            </div>
           </LeftPanel>
           <RightPanel>
             <SubscriptionOrderForm />
@@ -925,29 +925,26 @@ function App() {
     );
   }
 
-  /// AUTHENTICATED - Show admin dashboard with routes
+  // Show the main app if authenticated
   return (
     <div className="App">
       <Sidebar />
-      <div className="main-content" style={{ marginLeft: '250px', transition: 'margin-left 0.3s ease' }}>
+      <div className="main-content">
         <Topbar />
-        <div style={{ padding: '20px', background: '#f5f5f5', minHeight: 'calc(100vh - 60px)' }}>
-          <Routes>
-            {/* Dashboard Routes */}
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            
-            {/* Subscriber Management Routes */}
-            <Route path="/subscribers" element={<SubscribersTable />} />
-            <Route path="/subscriber/:id/add-subscription" element={<SubscriptionForm />} />
-            <Route path="/subscriber/:id/edit-subscription/:subscriptionId" element={<SubscriptionForm />} />
-            
-            {/* Chart Order Routes */}
-            <Route path="/charts" element={<AeronauticalCharts />} />
-            <Route path="/my-orders" element={<MyChartOrders />} />
-            <Route path="/admin/chart-orders" element={<ChartOrdersManagement />} />
-          </Routes>
-        </div>
+        <Routes>
+          <Route path="/" element={isAdmin ? <Dashboard /> : <SubscriberDashboard />} />
+          {isAdmin && (
+            <>
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/subscribers" element={<SubscribersTable />} />
+              <Route path="/subscriber/:id/add-subscription" element={<SubscriptionForm />} />
+              <Route path="/subscriber/:id/edit-subscription/:subscriptionId" element={<SubscriptionForm />} />
+              <Route path="/charts" element={<AeronauticalCharts />} />
+              <Route path="/my-orders" element={<MyChartOrders />} />
+              <Route path="/admin/chart-orders" element={<ChartOrdersManagement />} />
+            </>
+          )}
+        </Routes>
       </div>
     </div>
   );
