@@ -214,6 +214,8 @@ export const apiSlice = createApi({
     // Get notifications
     getNotifications: builder.query({
       query: () => '/notifications'
+    }),
+    
     // Get paper subscriptions for mailing labels
     getPaperSubscriptionsForMailingLabels: builder.query({
       query: (days = 30) => `/mailing-labels/paper-subscriptions?days=${days}`
