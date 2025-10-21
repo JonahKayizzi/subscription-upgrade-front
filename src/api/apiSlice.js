@@ -277,8 +277,6 @@ export const {
   useSetInvoiceRequestDateAdminMutation,
   useGetNotificationsQuery,
   useGetPaperSubscriptionsForMailingLabelsQuery,
-} = apiSlice; 
-  useSetInvoiceRequestDateAdminMutation, 
   useAddChartOrderMutation,
   useGetChartOrdersQuery,
   useGetAllChartOrdersQuery,
