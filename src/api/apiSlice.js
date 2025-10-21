@@ -94,6 +94,10 @@ export const apiSlice = createApi({
         params
       })
     }),
+    // Annual subscription report
+    getAnnualSubscriptionReport: builder.query({
+      query: () => '/reports/annual-subscription'
+    }),
     // Subscriber dashboard
     getSubscriberDashboard: builder.query({
       query: () => ({
@@ -225,6 +229,7 @@ export const {
   useUpdateSubscriptionMutation,
   useDeleteSubscriptionMutation,
   useGetDashboardStatsQuery,
+  useGetAnnualSubscriptionReportQuery,
   useGetSubscriberDashboardQuery,
   useRequestInvoiceMutation,
   useMarkInvoiceNotRequiredMutation,
