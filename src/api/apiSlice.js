@@ -211,6 +211,11 @@ export const apiSlice = createApi({
       })
     }),
 
+    // Get notifications
+    getNotifications: builder.query({
+      query: () => '/notifications'
+    }),
+
   }),
 });
 
@@ -241,4 +246,5 @@ export const {
   useCreateRenewalSubscriptionMutation,
   useCreateAdminSubscriptionMutation,
   useSetInvoiceRequestDateAdminMutation,
+  useGetNotificationsQuery,
 } = apiSlice; 
