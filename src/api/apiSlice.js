@@ -215,6 +215,11 @@ export const apiSlice = createApi({
     getNotifications: builder.query({
       query: () => '/notifications'
     }),
+    
+    // Get paper subscriptions for mailing labels
+    getPaperSubscriptionsForMailingLabels: builder.query({
+      query: (days = 30) => `/mailing-labels/paper-subscriptions?days=${days}`
+    }),
 
   }),
 });
@@ -247,4 +252,5 @@ export const {
   useCreateAdminSubscriptionMutation,
   useSetInvoiceRequestDateAdminMutation,
   useGetNotificationsQuery,
+  useGetPaperSubscriptionsForMailingLabelsQuery,
 } = apiSlice; 
