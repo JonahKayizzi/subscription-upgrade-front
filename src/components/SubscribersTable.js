@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useGetSubscribersQuery, useSearchSubscribersQuery, useDeleteSubscriberMutation, useGetSubscriberQuery, useUpdateSubscriberMutation, useGetAnnualSubscriptionReportQuery, useGetPaperSubscriptionsForMailingLabelsQuery } from '../api/apiSlice';
+import { useGetSubscribersQuery, useSearchSubscribersQuery, useDeleteSubscriberMutation, useGetSubscriberQuery, useUpdateSubscriberMutation, useGetAnnualSubscriptionReportQuery, useGetNotificationsQuery, useGetPaperSubscriptionsForMailingLabelsQuery } from '../api/apiSlice';
 import Card from './ui/Card';
 import Button from './ui/Button';
 import Modal from './ui/Modal';
@@ -401,8 +401,7 @@ export default function SubscribersTable() {
     if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} days ago`;
     return `${Math.floor(diffInSeconds / 604800)} weeks ago`;
   };
-  const { data: paperSubscriptionsData, isLoading: isLoadingPaperSubscriptions, refetch: refetchPaperSubscriptions } = useGetPaperSubscriptionsForMailingLabelsQuery(30);
-  const navigate = useNavigate();
+  const { data: paperSubscriptionsData, isLoading: isLoadingPaperSubscriptions, refetch: refetchPaperSubscriptions } = useGetPaperSubscriptionsForMailingLabelsQuery(365);
 
   React.useEffect(() => {
     if (subscriberDetails) {
