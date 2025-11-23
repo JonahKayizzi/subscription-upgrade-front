@@ -903,69 +903,105 @@ export default function SubscriberDashboard() {
 
                          <HistorySection>
                            <HistoryTitle>Subscription Summary</HistoryTitle>
-                           <HistoryItem>
-                             <HistoryIcon type="order">O</HistoryIcon>
-                             <HistoryText>Order form submitted</HistoryText>
-                             <HistoryDate>{new Date(subscription.sub_date).toLocaleDateString()}</HistoryDate>
-                           </HistoryItem>
-                           
-                           {hasInvoiceRequested && !hasInvoice && !isInvoiceNotRequired && (
-                             <HistoryItem>
-                               <HistoryIcon type="invoice">I</HistoryIcon>
-                               <HistoryText>Invoice requested</HistoryText>
-                               <HistoryDate>{new Date(subscription.invoice_requested_date).toLocaleDateString()}</HistoryDate>
-                             </HistoryItem>
-                           )}
-                           
-                           {hasInvoice && !isInvoiceNotRequired && (
-                             <HistoryItem>
-                               <HistoryIcon type="invoice">I</HistoryIcon>
-                               <HistoryText>Invoice received from admin</HistoryText>
-                               <HistoryDate>{new Date(subscription.invoice_received_date || subscription.sub_date).toLocaleDateString()}</HistoryDate>
-                             </HistoryItem>
-                           )}
-                           
-                           {isInvoiceNotRequired && (
-                             <HistoryItem>
-                               <HistoryIcon type="invoice">I</HistoryIcon>
-                               <HistoryText>Invoice not required</HistoryText>
-                               <HistoryDate style={{ color: 'var(--color-success)', fontStyle: 'italic' }}>N/A</HistoryDate>
-                             </HistoryItem>
-                           )}
-                           
-                           {hasReceipt && (
-                             <HistoryItem>
-                               <HistoryIcon type="receipt">R</HistoryIcon>
-                               <HistoryText>Payment receipt uploaded</HistoryText>
-                               <HistoryDate>
-                                 {new Date(subscription.receipt_received_date || subscription.sub_date).toLocaleDateString()}
-                               </HistoryDate>
-                             </HistoryItem>
-                           )}
-                           
-                           {subscription.receipt_verified_date && (
-                             <HistoryItem>
-                               <HistoryIcon type="receipt">✓</HistoryIcon>
-                               <HistoryText>Receipt verified and subscription activated</HistoryText>
-                               <HistoryDate>{new Date(subscription.receipt_verified_date).toLocaleDateString()}</HistoryDate>
-                             </HistoryItem>
-                           )}
-                           
-                           {subscription.sub_start_date && (subscription.status !== 'pending' && subscription.sub_status !== 2) && (
-                         <HistoryItem>
-                           <HistoryIcon type="receipt">S</HistoryIcon>
-                           <HistoryText>Subscription started</HistoryText>
-                           <HistoryDate>{new Date(subscription.sub_start_date).toLocaleDateString()}</HistoryDate>
-                         </HistoryItem>
-                       )}
-                       
-                       {subscription.sub_exp_date && (subscription.status !== 'pending' && subscription.sub_status !== 2) && (
-                         <HistoryItem>
-                           <HistoryIcon type="receipt">E</HistoryIcon>
-                           <HistoryText>Subscription expires</HistoryText>
-                           <HistoryDate>{new Date(subscription.sub_exp_date).toLocaleDateString()}</HistoryDate>
-                         </HistoryItem>
-                       )}
+                           {(() => {
+                             // Build array of events with their dates, only including events that have actually occurred
+                             const events = [];
+                             const isActive = subscription.receipt_verified_date && subscription.sub_status === 1;
+                             
+                             // Order form submitted (always show if subscription exists)
+                             if (subscription.sub_date) {
+                               events.push({
+                                 icon: 'O',
+                                 text: 'Order form submitted',
+                                 date: new Date(subscription.sub_date),
+                                 type: 'order'
+                               });
+                             }
+                             
+                             // Invoice requested (only if it happened and invoice not yet received)
+                             if (hasInvoiceRequested && !hasInvoice && !isInvoiceNotRequired && subscription.invoice_requested_date) {
+                               events.push({
+                                 icon: 'I',
+                                 text: 'Invoice requested',
+                                 date: new Date(subscription.invoice_requested_date),
+                                 type: 'invoice'
+                               });
+                             }
+                             
+                             // Invoice received (only if it actually happened)
+                             if (hasInvoice && !isInvoiceNotRequired && subscription.invoice_received_date) {
+                               events.push({
+                                 icon: 'I',
+                                 text: 'Invoice received from admin',
+                                 date: new Date(subscription.invoice_received_date),
+                                 type: 'invoice'
+                               });
+                             }
+                             
+                             // Invoice not required (special case, no date)
+                             if (isInvoiceNotRequired) {
+                               events.push({
+                                 icon: 'I',
+                                 text: 'Invoice not required',
+                                 date: subscription.sub_date ? new Date(subscription.sub_date) : new Date(),
+                                 type: 'invoice',
+                                 noDate: true
+                               });
+                             }
+                             
+                             // Payment receipt uploaded (only if it actually happened)
+                             if (hasReceipt && subscription.receipt_received_date) {
+                               events.push({
+                                 icon: 'R',
+                                 text: 'Payment receipt uploaded',
+                                 date: new Date(subscription.receipt_received_date),
+                                 type: 'receipt'
+                               });
+                             }
+                             
+                             // Receipt verified and subscription activated (only if it actually happened)
+                             if (subscription.receipt_verified_date) {
+                               events.push({
+                                 icon: '✓',
+                                 text: 'Receipt verified and subscription activated',
+                                 date: new Date(subscription.receipt_verified_date),
+                                 type: 'receipt'
+                               });
+                             }
+                             
+                             // Subscription started (only if subscription is active)
+                             if (isActive && subscription.sub_start_date) {
+                               events.push({
+                                 icon: 'S',
+                                 text: 'Subscription started',
+                                 date: new Date(subscription.sub_start_date),
+                                 type: 'receipt'
+                               });
+                             }
+                             
+                             // Subscription expires (only if subscription is active)
+                             if (isActive && subscription.sub_exp_date) {
+                               events.push({
+                                 icon: 'E',
+                                 text: 'Subscription expires',
+                                 date: new Date(subscription.sub_exp_date),
+                                 type: 'receipt'
+                               });
+                             }
+                             
+                             // Sort events chronologically by date
+                             events.sort((a, b) => a.date - b.date);
+                             
+                             return events.map((event, index) => (
+                               <HistoryItem key={index}>
+                                 <HistoryIcon type={event.type}>{event.icon}</HistoryIcon>
+                                 <HistoryText>{event.text}</HistoryText>
+                                 <HistoryDate style={event.noDate ? { color: 'var(--color-success)', fontStyle: 'italic' } : {}}>
+                                   {event.noDate ? 'N/A' : event.date.toLocaleDateString()}
+                                 </HistoryDate>
+                               </HistoryItem>
+                             ));
+                           })()}
                          </HistorySection>
                        </div>
                      </ExpandableContent>
@@ -1029,69 +1065,105 @@ export default function SubscriberDashboard() {
 
                      <HistorySection>
                        <HistoryTitle>Subscription Summary</HistoryTitle>
-                       <HistoryItem>
-                         <HistoryIcon type="order">O</HistoryIcon>
-                         <HistoryText>Order form submitted</HistoryText>
-                         <HistoryDate>{new Date(subscription.sub_date).toLocaleDateString()}</HistoryDate>
-                       </HistoryItem>
-                       
-                       {hasInvoiceRequested && !hasInvoice && !isInvoiceNotRequired && (
-                         <HistoryItem>
-                           <HistoryIcon type="invoice">I</HistoryIcon>
-                           <HistoryText>Invoice requested</HistoryText>
-                           <HistoryDate>{new Date(subscription.invoice_requested_date).toLocaleDateString()}</HistoryDate>
-                         </HistoryItem>
-                       )}
-                       
-                                                  {hasInvoice && !isInvoiceNotRequired && (
-                             <HistoryItem>
-                               <HistoryIcon type="invoice">I</HistoryIcon>
-                               <HistoryText>Invoice received from admin</HistoryText>
-                               <HistoryDate>{new Date(subscription.invoice_received_date || subscription.sub_date).toLocaleDateString()}</HistoryDate>
-                             </HistoryItem>
-                           )}
-                       
-                       {isInvoiceNotRequired && (
-                         <HistoryItem>
-                           <HistoryIcon type="invoice">I</HistoryIcon>
-                           <HistoryText>Invoice not required</HistoryText>
-                           <HistoryDate style={{ color: 'var(--color-success)', fontStyle: 'italic' }}>N/A</HistoryDate>
-                         </HistoryItem>
-                       )}
-                       
-                           {hasReceipt && (
-                             <HistoryItem>
-                               <HistoryIcon type="receipt">R</HistoryIcon>
-                               <HistoryText>Payment receipt uploaded</HistoryText>
-                               <HistoryDate>
-                                 {new Date(subscription.receipt_received_date || subscription.sub_date).toLocaleDateString()}
-                               </HistoryDate>
-                             </HistoryItem>
-                           )}
-                           
-                           {subscription.receipt_verified_date && (
-                             <HistoryItem>
-                               <HistoryIcon type="receipt">✓</HistoryIcon>
-                               <HistoryText>Receipt verified and subscription activated</HistoryText>
-                               <HistoryDate>{new Date(subscription.receipt_verified_date).toLocaleDateString()}</HistoryDate>
-                             </HistoryItem>
-                           )}
-                       
-                       {subscription.sub_start_date && (subscription.status !== 'pending' && subscription.sub_status !== 2) && (
-                         <HistoryItem>
-                           <HistoryIcon type="receipt">S</HistoryIcon>
-                           <HistoryText>Subscription started</HistoryText>
-                           <HistoryDate>{new Date(subscription.sub_start_date).toLocaleDateString()}</HistoryDate>
-                         </HistoryItem>
-                       )}
-                       
-                       {subscription.sub_exp_date && (subscription.status !== 'pending' && subscription.sub_status !== 2) && (
-                         <HistoryItem>
-                           <HistoryIcon type="receipt">E</HistoryIcon>
-                           <HistoryText>Subscription expires</HistoryText>
-                           <HistoryDate>{new Date(subscription.sub_exp_date).toLocaleDateString()}</HistoryDate>
-                         </HistoryItem>
-                       )}
+                       {(() => {
+                         // Build array of events with their dates, only including events that have actually occurred
+                         const events = [];
+                         const isActive = subscription.receipt_verified_date && subscription.sub_status === 1;
+                         
+                         // Order form submitted (always show if subscription exists)
+                         if (subscription.sub_date) {
+                           events.push({
+                             icon: 'O',
+                             text: 'Order form submitted',
+                             date: new Date(subscription.sub_date),
+                             type: 'order'
+                           });
+                         }
+                         
+                         // Invoice requested (only if it happened and invoice not yet received)
+                         if (hasInvoiceRequested && !hasInvoice && !isInvoiceNotRequired && subscription.invoice_requested_date) {
+                           events.push({
+                             icon: 'I',
+                             text: 'Invoice requested',
+                             date: new Date(subscription.invoice_requested_date),
+                             type: 'invoice'
+                           });
+                         }
+                         
+                         // Invoice received (only if it actually happened)
+                         if (hasInvoice && !isInvoiceNotRequired && subscription.invoice_received_date) {
+                           events.push({
+                             icon: 'I',
+                             text: 'Invoice received from admin',
+                             date: new Date(subscription.invoice_received_date),
+                             type: 'invoice'
+                           });
+                         }
+                         
+                         // Invoice not required (special case, no date)
+                         if (isInvoiceNotRequired) {
+                           events.push({
+                             icon: 'I',
+                             text: 'Invoice not required',
+                             date: subscription.sub_date ? new Date(subscription.sub_date) : new Date(),
+                             type: 'invoice',
+                             noDate: true
+                           });
+                         }
+                         
+                         // Payment receipt uploaded (only if it actually happened)
+                         if (hasReceipt && subscription.receipt_received_date) {
+                           events.push({
+                             icon: 'R',
+                             text: 'Payment receipt uploaded',
+                             date: new Date(subscription.receipt_received_date),
+                             type: 'receipt'
+                           });
+                         }
+                         
+                         // Receipt verified and subscription activated (only if it actually happened)
+                         if (subscription.receipt_verified_date) {
+                           events.push({
+                             icon: '✓',
+                             text: 'Receipt verified and subscription activated',
+                             date: new Date(subscription.receipt_verified_date),
+                             type: 'receipt'
+                           });
+                         }
+                         
+                         // Subscription started (only if subscription is active)
+                         if (isActive && subscription.sub_start_date) {
+                           events.push({
+                             icon: 'S',
+                             text: 'Subscription started',
+                             date: new Date(subscription.sub_start_date),
+                             type: 'receipt'
+                           });
+                         }
+                         
+                         // Subscription expires (only if subscription is active)
+                         if (isActive && subscription.sub_exp_date) {
+                           events.push({
+                             icon: 'E',
+                             text: 'Subscription expires',
+                             date: new Date(subscription.sub_exp_date),
+                             type: 'receipt'
+                           });
+                         }
+                         
+                         // Sort events chronologically by date
+                         events.sort((a, b) => a.date - b.date);
+                         
+                         return events.map((event, index) => (
+                           <HistoryItem key={index}>
+                             <HistoryIcon type={event.type}>{event.icon}</HistoryIcon>
+                             <HistoryText>{event.text}</HistoryText>
+                             <HistoryDate style={event.noDate ? { color: 'var(--color-success)', fontStyle: 'italic' } : {}}>
+                               {event.noDate ? 'N/A' : event.date.toLocaleDateString()}
+                             </HistoryDate>
+                           </HistoryItem>
+                         ));
+                       })()}
                      </HistorySection>
                    </SubscriptionCard>
                  );
