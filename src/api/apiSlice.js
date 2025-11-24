@@ -29,6 +29,13 @@ export const apiSlice = createApi({
         body: userData,
       }),
     }),
+    changePassword: builder.mutation({
+      query: (passwordData) => ({
+        url: '/auth/change-password',
+        method: 'PUT',
+        body: passwordData,
+      }),
+    }),
     // Subscribers
     getSubscribers: builder.query({
       query: () => '/subscribers',
@@ -227,6 +234,7 @@ export const apiSlice = createApi({
 export const {
   useLoginMutation,
   useRegisterMutation,
+  useChangePasswordMutation,
   useGetSubscribersQuery,
   useSearchSubscribersQuery,
   useGetSubscriberQuery,

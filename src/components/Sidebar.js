@@ -81,7 +81,14 @@ export default function Sidebar() {
           </>
         )}
         
-        <FiSettings size={28} color="#fff" style={{ marginBottom: 24, cursor: 'pointer' }} title="Settings" />
+        <Link to="/settings" style={{ textDecoration: 'none' }}>
+          <FiSettings 
+            size={28} 
+            color={isActive('/settings') ? '#f7b801' : '#fff'} 
+            style={{ marginBottom: 24, cursor: 'pointer' }} 
+            title="Settings" 
+          />
+        </Link>
       </div>
       <div style={{ marginTop: 'auto', marginBottom: 16 }}>
         <button onClick={() => dispatch(logout())} style={{ background: 'none', border: 'none', cursor: 'pointer' }} title="Logout">
