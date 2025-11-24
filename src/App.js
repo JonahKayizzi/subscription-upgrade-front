@@ -7,6 +7,7 @@ import SubscriberDashboard from './components/SubscriberDashboard';
 import SubscribersTable from './components/SubscribersTable';
 import SubscriptionForm from './components/SubscriptionForm';
 import SubscriptionOrderForm from './components/SubscriptionOrderForm';
+import Settings from './components/Settings';
 // import AddSubscriptionPage from './components/AddSubscriptionPage';
 import { useSelector, useDispatch } from 'react-redux';
 import { Routes, Route } from 'react-router-dom';
@@ -1001,6 +1002,7 @@ function App() {
         <Topbar />
         <Routes>
           <Route path="/" element={isAdmin ? <Dashboard /> : <SubscriberDashboard />} />
+          <Route path="/settings" element={<Settings />} />
           {isAdmin && (
             <>
           <Route path="/subscribers" element={<SubscribersTable />} />

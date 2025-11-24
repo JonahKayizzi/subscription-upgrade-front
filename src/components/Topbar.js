@@ -4,6 +4,7 @@ import { useLocation, Link, useNavigate } from 'react-router-dom';
 import { setSearchQuery } from '../features/search/searchSlice';
 import { logout } from '../features/auth/authSlice';
 import SubscriberPickerModal from './SubscriberPickerModal';
+import { FiSettings } from 'react-icons/fi';
 
 export default function Topbar() {
   const dispatch = useDispatch();
@@ -61,6 +62,29 @@ export default function Topbar() {
           {isAdmin && (
             <button className="button-primary" onClick={handleAddSubscriptionClick}>+ Add Subscription</button>
           )}
+          <Link to="/settings" style={{ textDecoration: 'none' }}>
+            <button 
+              style={{
+                background: 'var(--color-bg-card)',
+                color: 'var(--color-text)',
+                border: '1px solid var(--color-border)',
+                borderRadius: 8,
+                padding: '8px 16px',
+                cursor: 'pointer',
+                fontSize: 14,
+                fontWeight: 500,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                transition: 'background 0.2s'
+              }}
+              onMouseEnter={(e) => e.target.style.background = 'var(--color-bg-hover)'}
+              onMouseLeave={(e) => e.target.style.background = 'var(--color-bg-card)'}
+            >
+              <FiSettings size={16} />
+              Settings
+            </button>
+          </Link>
           <div style={{ background: 'var(--color-accent2)', color: '#fff', borderRadius: 16, padding: '8px 20px', fontWeight: 700, fontSize: 18 }}>
             {today}
           </div>
