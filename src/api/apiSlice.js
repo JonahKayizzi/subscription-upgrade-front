@@ -228,6 +228,28 @@ export const apiSlice = createApi({
       query: (days = 30) => `/mailing-labels/paper-subscriptions?days=${days}`
     }),
 
+    // Get user settings
+    getUserSettings: builder.query({
+      query: () => '/user/settings'
+    }),
+
+    // Update user settings
+    updateUserSettings: builder.mutation({
+      query: (settings) => ({
+        url: '/user/settings',
+        method: 'PUT',
+        body: settings
+      })
+    }),
+
+    // Export data (admin only) - using mutation for on-demand fetching
+    exportData: builder.mutation({
+      query: () => ({
+        url: '/admin/export-data',
+        method: 'GET'
+      })
+    }),
+
   }),
 });
 
@@ -261,4 +283,7 @@ export const {
   useSetInvoiceRequestDateAdminMutation,
   useGetNotificationsQuery,
   useGetPaperSubscriptionsForMailingLabelsQuery,
+  useGetUserSettingsQuery,
+  useUpdateUserSettingsMutation,
+  useExportDataMutation,
 } = apiSlice; 
