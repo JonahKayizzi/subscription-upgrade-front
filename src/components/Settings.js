@@ -13,6 +13,7 @@ const SettingsContainer = styled.div`
   margin: 0 auto;
 `;
 
+
 const SettingsHeader = styled.div`
   display: flex;
   align-items: center;
@@ -283,7 +284,7 @@ const ErrorToast = styled(SuccessToast)`
 
 export default function Settings() {
   const user = useSelector(state => state.auth.user);
-  const isAdmin = user?.email === '***REMOVED***';
+  const isAdmin = user?.role === 'ADMIN';
   
   // Load user settings from backend
   const { data: settingsData, isLoading: isLoadingSettings } = useGetUserSettingsQuery(undefined, {
@@ -296,6 +297,7 @@ export default function Settings() {
   const [notifications, setNotifications] = useState(true);
   const [emailAlerts, setEmailAlerts] = useState(true);
   const [autoBackup, setAutoBackup] = useState(false);
+  const [twoFactorAuth, setTwoFactorAuth] = useState(false);
   
   // Toast messages
   const [toastMessage, setToastMessage] = useState(null);
@@ -323,6 +325,7 @@ export default function Settings() {
     if (settingsData) {
       setNotifications(settingsData.notifications ?? true);
       setEmailAlerts(settingsData.emailAlerts ?? true);
+      setTwoFactorAuth(settingsData.twoFactorAuth ?? false);
       setAutoBackup(settingsData.autoBackup ?? false);
     }
   }, [settingsData]);
@@ -356,6 +359,21 @@ export default function Settings() {
     } catch (err) {
       setEmailAlerts(!checked); // Revert on error
       showToast(err?.data?.error || 'Failed to update email alerts setting', 'error');
+    }
+  };
+  
+  const handleTwoFactorAuthChange = async (checked) => {
+    setTwoFactorAuth(checked);
+    try {
+      await updateSettings({ twoFactorAuth: checked }).unwrap();
+      if (checked) {
+        showToast('Two-factor authentication enabled. Full implementation coming soon.');
+      } else {
+        showToast('Two-factor authentication disabled');
+      }
+    } catch (err) {
+      setTwoFactorAuth(!checked); // Revert on error
+      showToast(err?.data?.error || 'Failed to update two-factor authentication setting', 'error');
     }
   };
   
@@ -577,6 +595,23 @@ export default function Settings() {
           <FiShield size={20} />
           Security
         </SectionTitle>
+        <SettingItem>
+          <SettingLabel>
+            <SettingName>Two-Factor Authentication</SettingName>
+            <SettingDescription>Add an extra layer of security to your account</SettingDescription>
+          </SettingLabel>
+          <SettingControl>
+            <ToggleSwitch>
+              <input
+                type="checkbox"
+                checked={twoFactorAuth}
+                onChange={(e) => handleTwoFactorAuthChange(e.target.checked)}
+                disabled={isLoadingSettings || isUpdatingSettings}
+              />
+              <span className="slider"></span>
+            </ToggleSwitch>
+          </SettingControl>
+        </SettingItem>
         <SettingItem>
           <SettingLabel>
             <SettingName>Change Password</SettingName>
