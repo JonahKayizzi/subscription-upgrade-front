@@ -245,6 +245,53 @@ export const apiSlice = createApi({
         body: { status, admin_notes },
       }),
     }),
+    createChartOrderAdmin: builder.mutation({
+      query: (data) => ({
+        url: '/admin/chart-orders',
+        method: 'POST',
+        body: data,
+      }),
+    }),
+
+    // Chart catalog
+    getCharts: builder.query({
+      query: (params = {}) => ({
+        url: '/charts',
+        params: {
+          type: params.type,
+          search: params.search,
+          page: params.page || 1,
+          limit: params.limit || 50,
+          active_only: params.active_only !== false
+        }
+      }),
+    }),
+    getChart: builder.query({
+      query: (id) => `/charts/${id}`,
+    }),
+    getChartTypes: builder.query({
+      query: () => '/charts/types/list',
+    }),
+    createChart: builder.mutation({
+      query: (data) => ({
+        url: '/admin/charts',
+        method: 'POST',
+        body: data,
+      }),
+    }),
+    updateChart: builder.mutation({
+      query: ({ id, ...data }) => ({
+        url: `/admin/charts/${id}`,
+        method: 'PUT',
+        body: data,
+      }),
+    }),
+    deleteChart: builder.mutation({
+      query: (id) => ({
+        url: `/admin/charts/${id}`,
+        method: 'DELETE',
+      }),
+    }),
   }),
 });
 
@@ -282,4 +329,11 @@ export const {
   useGetAllChartOrdersQuery,
   useGetChartOrderDetailsQuery,
   useUpdateChartOrderStatusMutation,
+  useCreateChartOrderAdminMutation,
+  useGetChartsQuery,
+  useGetChartQuery,
+  useGetChartTypesQuery,
+  useCreateChartMutation,
+  useUpdateChartMutation,
+  useDeleteChartMutation,
 } = apiSlice;

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import styled from 'styled-components';
 import { useGetChartOrdersQuery } from '../api/apiSlice';
-import { FaEye, FaEyeSlash, FaClock, FaTruck, FaCheckCircle, FaTimesCircle, FaInfoCircle } from 'react-icons/fa';
+import { FaEye, FaEyeSlash, FaClock, FaTruck, FaCheckCircle, FaTimesCircle, FaInfoCircle, FaMap } from 'react-icons/fa';
 
 const Container = styled.div`
   padding: 24px;
@@ -98,6 +99,28 @@ const EmptyState = styled.div`
   background: var(--color-bg-card);
   border-radius: 8px;
   border: 1px solid var(--color-border);
+`;
+
+const BrowseButton = styled(Link)`
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent2) 100%);
+  color: var(--color-text);
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(247, 184, 1, 0.3);
+  }
 `;
 
 const OrderDetails = styled.div`
@@ -242,7 +265,10 @@ export default function MyChartOrders() {
       {orders.length === 0 ? (
         <EmptyState>
           <h3 style={{ margin: '0 0 8px 0', color: '#374151' }}>No chart orders yet</h3>
-          <p style={{ margin: 0 }}>You haven't placed any chart orders yet. Browse our aeronautical charts to get started!</p>
+          <p style={{ margin: '0 0 16px 0' }}>You haven't placed any chart orders yet. Browse our aeronautical charts to get started!</p>
+          <BrowseButton to="/charts">
+            <FaMap /> Browse Charts Catalog
+          </BrowseButton>
         </EmptyState>
       ) : (
         <OrdersTable>

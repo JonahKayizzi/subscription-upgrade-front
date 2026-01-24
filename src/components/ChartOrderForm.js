@@ -206,17 +206,31 @@ const CHART_SIZES = [
 const calculatePrice = (chartPrices, size, copies) => {
   if (!chartPrices || !size || !copies) return 0;
   
-  const priceString = chartPrices.find(price => 
-    price.toLowerCase().includes(size.toLowerCase())
-  );
+  // Handle both old format (array of strings) and new format (array of objects)
+  let pricePerSheet = 0;
   
-  if (!priceString) return 0;
+  if (Array.isArray(chartPrices) && chartPrices.length > 0) {
+    // Check if it's new format (array of objects with size and price_usd)
+    if (typeof chartPrices[0] === 'object' && chartPrices[0].size) {
+      const priceObj = chartPrices.find(p => p.size && p.size.toLowerCase() === size.toLowerCase());
+      if (priceObj && priceObj.price_usd) {
+        pricePerSheet = parseFloat(priceObj.price_usd);
+      }
+    } else {
+      // Old format (array of strings like "A4 size: 5 USD")
+      const priceString = chartPrices.find(price => 
+        typeof price === 'string' && price.toLowerCase().includes(size.toLowerCase())
+      );
+      
+      if (priceString) {
+        const priceMatch = priceString.match(/(\d+)\s*USD/);
+        if (priceMatch) {
+          pricePerSheet = parseInt(priceMatch[1]);
+        }
+      }
+    }
+  }
   
-  // Extract price from string like "A4 size: 5 USD per sheet"
-  const priceMatch = priceString.match(/(\d+)\s*USD/);
-  if (!priceMatch) return 0;
-  
-  const pricePerSheet = parseInt(priceMatch[1]);
   return pricePerSheet * parseInt(copies);
 };
 
@@ -313,10 +327,10 @@ export default function ChartOrderForm({ chart, isOpen, onClose }) {
       const orderData = {
         chart_id: chart.id,
         chart_name: Array.isArray(chart.name) ? chart.name[0] : chart.name,
-        chart_title: chart.title,
-        chart_scale: chart.scale,
-        chart_date: chart.date,
-        chart_prices: chart.prices,
+        chart_title: chart.title || '',
+        chart_scale: chart.scale || '',
+        chart_date: chart.update_date || chart.date || '',
+        chart_prices: chart.prices || [],
         ...form,
         order_type: 'chart'
       };
@@ -365,14 +379,24 @@ export default function ChartOrderForm({ chart, isOpen, onClose }) {
         <Title>Order form for renewal of chart</Title>
         
         <ChartInfo>
-          <h4>{chart.title}</h4>
+          <h4>{chart.title || 'Chart'}</h4>
           <p><strong>Name:</strong> {Array.isArray(chart.name) ? chart.name.join(', ') : chart.name}</p>
-          <p><strong>Scale:</strong> {chart.scale}</p>
-          <p><strong>Date:</strong> {chart.date}</p>
+          {chart.scale && <p><strong>Scale:</strong> {chart.scale}</p>}
+          <p><strong>Date:</strong> {chart.update_date || chart.date || 'N/A'}</p>
           <p><strong>Available Sizes & Prices:</strong></p>
-          {chart.prices.map((price, i) => (
-            <p key={i} style={{ marginLeft: '16px' }}>• {price}</p>
-          ))}
+          {chart.prices && chart.prices.length > 0 ? (
+            chart.prices.map((price, i) => {
+              // Handle both old format (string) and new format (object)
+              const priceText = typeof price === 'object' && price.size
+                ? `${price.size.toUpperCase()} size: ${price.price_usd} USD`
+                : price;
+              return (
+                <p key={i} style={{ marginLeft: '16px' }}>• {priceText}</p>
+              );
+            })
+          ) : (
+            <p style={{ marginLeft: '16px', color: 'var(--color-text-muted)' }}>No pricing available</p>
+          )}
         </ChartInfo>
 
         {totalPrice > 0 && (

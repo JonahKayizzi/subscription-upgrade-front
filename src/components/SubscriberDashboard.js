@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
+import { Link } from 'react-router-dom';
 import Card from './ui/Card';
 import styled from 'styled-components';
-import { FaFileAlt, FaUpload, FaDownload, FaCheckCircle, FaClock, FaExclamationTriangle, FaPlus, FaChevronDown, FaChevronUp, FaEye, FaTimes } from 'react-icons/fa';
-import { useGetSubscriberDashboardQuery, useRequestInvoiceMutation, useMarkInvoiceNotRequiredMutation, useUploadReceiptMutation, useUpdateSubscriberInfoMutation, useCreateRenewalSubscriptionMutation } from '../api/apiSlice';
+import { FaFileAlt, FaUpload, FaDownload, FaCheckCircle, FaClock, FaExclamationTriangle, FaPlus, FaChevronDown, FaChevronUp, FaEye, FaTimes, FaMap, FaShoppingBag } from 'react-icons/fa';
+import { useGetSubscriberDashboardQuery, useRequestInvoiceMutation, useMarkInvoiceNotRequiredMutation, useUploadReceiptMutation, useUpdateSubscriberInfoMutation, useCreateRenewalSubscriptionMutation, useGetChartOrdersQuery } from '../api/apiSlice';
 import SubscriberInfoForm from './SubscriberInfoForm';
 import RenewalModal from './RenewalModal';
 import { SUBSCRIPTION_TYPES } from '../config/subscriptionTypes';
@@ -423,9 +424,78 @@ const ExpiredBadge = styled.span`
   gap: 4px;
 `;
 
+const QuickAccessGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+  margin-bottom: 32px;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+const QuickAccessCard = styled(Link)`
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 24px;
+  text-decoration: none;
+  color: var(--color-text);
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-color: var(--color-accent);
+  }
+`;
+
+const QuickAccessIcon = styled.div`
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent2) 100%);
+  color: var(--color-text);
+`;
+
+const QuickAccessTitle = styled.h3`
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0;
+  color: var(--color-text);
+`;
+
+const QuickAccessDescription = styled.p`
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  margin: 0;
+  line-height: 1.4;
+`;
+
+const QuickAccessBadge = styled.span`
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+  margin-top: auto;
+  align-self: flex-start;
+`;
+
 export default function SubscriberDashboard() {
   const user = useSelector(state => state.auth.user);
   const { data: dashboardData, isLoading, error, refetch } = useGetSubscriberDashboardQuery();
+  const { data: chartOrdersData } = useGetChartOrdersQuery();
   const [activeTab, setActiveTab] = useState('eAIP');
   const [expandedSubscriptions, setExpandedSubscriptions] = useState(new Set());
   const [renewalModal, setRenewalModal] = useState({ isOpen: false, subscriptionType: null });
@@ -437,6 +507,9 @@ export default function SubscriberDashboard() {
   const [uploadReceipt] = useUploadReceiptMutation();
   const [updateSubscriberInfo] = useUpdateSubscriberInfoMutation();
   const [createRenewalSubscription] = useCreateRenewalSubscriptionMutation();
+  
+  const chartOrdersCount = chartOrdersData?.length || 0;
+  const pendingOrdersCount = chartOrdersData?.filter(order => order.order_status === 'pending').length || 0;
   
   const subscriptionTypes = SUBSCRIPTION_TYPES.map(type => ({
     id: type.id,
@@ -623,6 +696,39 @@ export default function SubscriberDashboard() {
           <WelcomeTitle>Welcome back, {user?.name || user?.email}!</WelcomeTitle>
           <WelcomeSubtitle>Manage your AIP subscriptions and track your orders</WelcomeSubtitle>
         </WelcomeSection>
+        
+        <QuickAccessGrid>
+          <QuickAccessCard to="/charts">
+            <QuickAccessIcon>
+              <FaMap />
+            </QuickAccessIcon>
+            <QuickAccessTitle>Browse Charts</QuickAccessTitle>
+            <QuickAccessDescription>
+              Explore our complete catalog of aeronautical charts. Search, filter, and order charts in various sizes.
+            </QuickAccessDescription>
+            <QuickAccessBadge>View Catalog →</QuickAccessBadge>
+          </QuickAccessCard>
+          
+          <QuickAccessCard to="/my-orders">
+            <QuickAccessIcon>
+              <FaShoppingBag />
+            </QuickAccessIcon>
+            <QuickAccessTitle>My Chart Orders</QuickAccessTitle>
+            <QuickAccessDescription>
+              View and track all your chart orders. {chartOrdersCount > 0 && (
+                <>You have {chartOrdersCount} order{chartOrdersCount !== 1 ? 's' : ''}.</>
+              )}
+            </QuickAccessDescription>
+            {chartOrdersCount > 0 ? (
+              <QuickAccessBadge>
+                {pendingOrdersCount > 0 && `${pendingOrdersCount} Pending • `}
+                {chartOrdersCount} Total Order{chartOrdersCount !== 1 ? 's' : ''} →
+              </QuickAccessBadge>
+            ) : (
+              <QuickAccessBadge>No orders yet →</QuickAccessBadge>
+            )}
+          </QuickAccessCard>
+        </QuickAccessGrid>
 
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
