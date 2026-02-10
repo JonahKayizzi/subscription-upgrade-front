@@ -221,6 +221,14 @@ export const apiSlice = createApi({
       query: (days = 30) => `/mailing-labels/paper-subscriptions?days=${days}`
     }),
 
+    // Generate dispatch list PDF
+    generateDispatchList: builder.mutation({
+      query: (days = 30) => ({
+        url: `/dispatch-list?days=${days}`,
+        responseType: 'blob'
+      })
+    }),
+
   }),
 });
 
@@ -253,4 +261,5 @@ export const {
   useSetInvoiceRequestDateAdminMutation,
   useGetNotificationsQuery,
   useGetPaperSubscriptionsForMailingLabelsQuery,
+  useGenerateDispatchListMutation,
 } = apiSlice; 
