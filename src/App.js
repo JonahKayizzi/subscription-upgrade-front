@@ -10,6 +10,7 @@ import SubscriptionOrderForm from './components/SubscriptionOrderForm';
 import AeronauticalCharts from './components/AeronauticalCharts';
 import MyChartOrders from './components/MyChartOrders';
 import ChartOrdersManagement from './components/ChartOrdersManagement';
+import ChartsManagement from './components/ChartsManagement';
 import { useSelector, useDispatch } from 'react-redux';
 import { Routes, Route } from 'react-router-dom';
 import { logout } from './features/auth/authSlice';
@@ -933,15 +934,20 @@ function App() {
         <Topbar />
         <Routes>
           <Route path="/" element={isAdmin ? <Dashboard /> : <SubscriberDashboard />} />
+          
+          {/* Routes available to all authenticated users */}
+          <Route path="/charts" element={<AeronauticalCharts />} />
+          <Route path="/my-orders" element={<MyChartOrders />} />
+          
+          {/* Admin-only routes */}
           {isAdmin && (
             <>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/subscribers" element={<SubscribersTable />} />
               <Route path="/subscriber/:id/add-subscription" element={<SubscriptionForm />} />
               <Route path="/subscriber/:id/edit-subscription/:subscriptionId" element={<SubscriptionForm />} />
-              <Route path="/charts" element={<AeronauticalCharts />} />
-              <Route path="/my-orders" element={<MyChartOrders />} />
               <Route path="/admin/chart-orders" element={<ChartOrdersManagement />} />
+              <Route path="/admin/charts" element={<ChartsManagement />} />
             </>
           )}
         </Routes>

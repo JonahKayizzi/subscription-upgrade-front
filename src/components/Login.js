@@ -67,7 +67,8 @@ export default function Login() {
       }));
       // Optionally redirect or show success
     } catch (err) {
-      // Handle error
+      // Handle error - err.data will contain the error message from the server
+      console.error('Login error:', err);
     }
   };
 
@@ -87,8 +88,14 @@ export default function Login() {
         placeholder="Password"
         autoComplete="current-password"
       />
-      <Button type="submit" disabled={isLoading}>Login</Button>
-      {error && <ErrorMsg>Login failed</ErrorMsg>}
+      <Button type="submit" disabled={isLoading}>
+        {isLoading ? 'Logging in...' : 'Login'}
+      </Button>
+      {error && (
+        <ErrorMsg>
+          {error.data?.error || error.data?.message || 'Login failed. Please check your credentials.'}
+        </ErrorMsg>
+      )}
     </Form>
   );
 } 

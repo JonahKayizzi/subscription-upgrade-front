@@ -38,28 +38,35 @@ export default function Sidebar() {
             title="Dashboard" 
           />
         </Link>
-        <Link to="/subscribers" style={{ textDecoration: 'none' }}>
-          <FiUsers 
-            size={28} 
-            color={isActive('/subscribers') ? '#f7b801' : '#fff'} 
-            style={{ marginBottom: 24, cursor: 'pointer' }} 
-            title="Subscribers" 
-          />
-        </Link>
-        <button
-          onClick={handleAddSubscriptionClick}
-          style={{
-            background: 'none',
-            border: 'none',
-            padding: 0,
-            margin: 0,
-            cursor: 'pointer',
-            marginBottom: 24
-          }}
-          title="Add Subscription"
-        >
-          <FiPlusSquare size={28} color="#fff" />
-        </button>
+        {/* Admin-only links */}
+        {isAdmin && (
+          <>
+            <Link to="/subscribers" style={{ textDecoration: 'none' }}>
+              <FiUsers 
+                size={28} 
+                color={isActive('/subscribers') ? '#f7b801' : '#fff'} 
+                style={{ marginBottom: 24, cursor: 'pointer' }} 
+                title="Subscribers" 
+              />
+            </Link>
+            <button
+              onClick={handleAddSubscriptionClick}
+              style={{
+                background: 'none',
+                border: 'none',
+                padding: 0,
+                margin: 0,
+                cursor: 'pointer',
+                marginBottom: 24
+              }}
+              title="Add Subscription"
+            >
+              <FiPlusSquare size={28} color="#fff" />
+            </button>
+          </>
+        )}
+        
+        {/* Available to all users */}
         <Link to="/charts" style={{ textDecoration: 'none' }}>
           <FiBarChart2 
             size={28} 
@@ -76,14 +83,28 @@ export default function Sidebar() {
             title="My Orders" 
           />
         </Link>
-        <Link to="/admin/chart-orders" style={{ textDecoration: 'none' }}>
-          <FiClipboard 
-            size={28} 
-            color={isActive('/admin/chart-orders') ? '#f7b801' : '#fff'} 
-            style={{ marginBottom: 24, cursor: 'pointer' }} 
-            title="Manage Orders" 
-          />
-        </Link>
+        
+        {/* Admin-only management links */}
+        {isAdmin && (
+          <>
+            <Link to="/admin/chart-orders" style={{ textDecoration: 'none' }}>
+              <FiClipboard 
+                size={28} 
+                color={isActive('/admin/chart-orders') ? '#f7b801' : '#fff'} 
+                style={{ marginBottom: 24, cursor: 'pointer' }} 
+                title="Manage All Orders" 
+              />
+            </Link>
+            <Link to="/admin/charts" style={{ textDecoration: 'none' }}>
+              <FiBarChart2 
+                size={28} 
+                color={isActive('/admin/charts') ? '#f7b801' : '#fff'} 
+                style={{ marginBottom: 24, cursor: 'pointer' }} 
+                title="Manage Charts" 
+              />
+            </Link>
+          </>
+        )}
         <FiSettings size={28} color="#fff" style={{ marginBottom: 24, cursor: 'pointer' }} title="Settings" />
       </div>
       <div style={{ marginTop: 'auto', marginBottom: 16 }}>
