@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { useGetSubscribersQuery, useSearchSubscribersQuery, useDeleteSubscriberMutation, useGetSubscriberQuery, useUpdateSubscriberMutation, useGetAnnualSubscriptionReportQuery, useGetNotificationsQuery, useGetPaperSubscriptionsForMailingLabelsQuery } from '../api/apiSlice';
+import { printMailingLabels, downloadMailingLabels } from '../utils/mailingLabels';
+import { printDispatchList } from '../utils/dispatchList';
 import Card from './ui/Card';
 import Button from './ui/Button';
 import Modal from './ui/Modal';
@@ -23,7 +25,6 @@ import AddSubscriberForm from './AddSubscriberForm';
 import AdminSubscriptionRequestModal from './AdminSubscriptionRequestModal';
 import { SUBSCRIPTION_TYPES, getSubscriptionType, hasCredentials, hasDelivery } from '../config/subscriptionTypes';
 import { exportAnnualSubscriptionReport } from '../utils/excelExport';
-import { printMailingLabels, downloadMailingLabels } from '../utils/mailingLabels';
 
 ChartJS.register(
   CategoryScale,
@@ -385,6 +386,8 @@ export default function SubscribersTable() {
   const [exportStatus, setExportStatus] = useState(null);
   const [isLoadingMailingLabels, setIsLoadingMailingLabels] = useState(false);
   const [mailingLabelsStatus, setMailingLabelsStatus] = useState(null);
+  const [isLoadingDispatchList, setIsLoadingDispatchList] = useState(false);
+  const [dispatchListStatus, setDispatchListStatus] = useState(null);
   const { data: subscriberDetails, isLoading: isLoadingDetails, refetch } = useGetSubscriberQuery(selected?.sub_id, { skip: !selected });
   const { data: annualReportData, isLoading: isReportLoading } = useGetAnnualSubscriptionReportQuery();
   const { data: notificationsData, isLoading: isLoadingNotifications } = useGetNotificationsQuery();
@@ -614,6 +617,44 @@ export default function SubscribersTable() {
     }
   };
 
+  const handlePrintDispatchList = async () => {
+    setIsLoadingDispatchList(true);
+    setDispatchListStatus(null);
+
+    try {
+      console.log('Starting dispatch list generation...');
+      
+      // Get paper subscriptions data (similar to mailing labels)
+      const result = await refetchPaperSubscriptions();
+      
+      if (result.data && result.data.subscriptions) {
+        // Use the frontend dispatch list utility
+        printDispatchList(result.data.subscriptions);
+        
+        setDispatchListStatus({
+          type: 'success',
+          message: `Generated dispatch list with ${result.data.subscriptions.length} payment clients and 6 UCAA internal clients`
+        });
+      } else {
+        // Generate with sample data if no subscriptions found
+        printDispatchList([]);
+        
+        setDispatchListStatus({
+          type: 'success',
+          message: 'Generated dispatch list with sample data (6 payment clients + 6 UCAA internal clients)'
+        });
+      }
+    } catch (error) {
+      console.error('Error generating dispatch list:', error);
+      setDispatchListStatus({
+        type: 'error',
+        message: 'An error occurred while generating dispatch list'
+      });
+    } finally {
+      setIsLoadingDispatchList(false);
+    }
+  };
+
   const handleSubscriberDetailChange = (e) => {
     const { name, value } = e.target;
     setEditedSubscriber(prev => ({
@@ -715,9 +756,9 @@ export default function SubscribersTable() {
               <ActionIcon>+</ActionIcon>
               Add New Subscriber
             </ActionButton>
-            <ActionButton>
-              <ActionIcon>📋</ActionIcon>
-              Print Dispatch List
+            <ActionButton onClick={handlePrintDispatchList} disabled={isLoadingDispatchList}>
+              <ActionIcon>{isLoadingDispatchList ? <FaSpinner className="fa-spin" /> : '📋'}</ActionIcon>
+              {isLoadingDispatchList ? 'Loading...' : 'Print Dispatch List'}
             </ActionButton>
             <ActionButton onClick={handlePrintMailingLabels} disabled={isLoadingMailingLabels}>
               <ActionIcon>{isLoadingMailingLabels ? <FaSpinner className="fa-spin" /> : '🏷️'}</ActionIcon>
@@ -735,6 +776,11 @@ export default function SubscribersTable() {
             {mailingLabelsStatus && (
               <StatusMessage success={mailingLabelsStatus.type === 'success'}>
                 {mailingLabelsStatus.message}
+              </StatusMessage>
+            )}
+            {dispatchListStatus && (
+              <StatusMessage success={dispatchListStatus.type === 'success'}>
+                {dispatchListStatus.message}
               </StatusMessage>
             )}
         </Card>

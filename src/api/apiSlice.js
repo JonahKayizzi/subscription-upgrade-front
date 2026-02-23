@@ -245,6 +245,14 @@ export const apiSlice = createApi({
         body: { status, admin_notes },
       }),
     }),
+    // Generate dispatch list PDF
+    generateDispatchList: builder.mutation({
+      query: (days = 30) => ({
+        url: `/dispatch-list?days=${days}`,
+        responseType: 'blob'
+      })
+    }),
+
   }),
 });
 
@@ -283,3 +291,5 @@ export const {
   useGetChartOrderDetailsQuery,
   useUpdateChartOrderStatusMutation,
 } = apiSlice;
+  useGenerateDispatchListMutation,
+} = apiSlice; 
