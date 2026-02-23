@@ -345,5 +345,3 @@ export const {
   useUpdateChartMutation,
   useDeleteChartMutation,
 } = apiSlice;
-  useGenerateDispatchListMutation,
-} = apiSlice; 
