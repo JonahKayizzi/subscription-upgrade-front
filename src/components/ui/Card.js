@@ -1,9 +1,9 @@
 import React from 'react';
 
-export default function Card({ children, style }) {
+export default function Card({ children, className = '', style }) {
   return (
-    <div className="card" style={style}>
+    <div className={`card ${className}`.trim()} style={style}>
       {children}
     </div>
   );
-} 
+}

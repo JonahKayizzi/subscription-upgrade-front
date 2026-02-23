@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useLocation, Link, useNavigate } from 'react-router-dom';
 import { setSearchQuery } from '../features/search/searchSlice';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { logout } from '../features/auth/authSlice';
 import SubscriberPickerModal from './SubscriberPickerModal';
 
@@ -14,26 +14,16 @@ export default function Topbar() {
   const [pickerOpen, setPickerOpen] = useState(false);
 
   const isAdmin = user?.email === 'ais@caa.co.ug';
-
-  const handleSearchInputChange = (e) => {
-    dispatch(setSearchQuery(e.target.value));
-  };
-
   const today = new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
   const showSearchInput = location.pathname === '/subscribers' && isAdmin;
 
-  const handleAddSubscriptionClick = () => {
-    setPickerOpen(true);
-  };
-
+  const handleAddSubscriptionClick = () => setPickerOpen(true);
   const handleSubscriberSelect = (subscriber) => {
     setPickerOpen(false);
     navigate(`/subscriber/${subscriber.sub_id}/add-subscription`);
   };
-
   const handleLogout = () => {
     dispatch(logout());
-    // Navigate to landing page
     navigate('/');
   };
 
@@ -44,56 +34,25 @@ export default function Topbar() {
           type="text"
           placeholder="Search for subscriptions, payouts, and reminders"
           value={searchQuery}
-          onChange={handleSearchInputChange}
-          style={{
-            background: 'var(--color-bg-card)',
-            border: 'none',
-            borderRadius: 8,
-            padding: '10px 16px',
-            color: 'var(--color-text)',
-            width: 320,
-            marginRight: 24,
-          }}
+          onChange={(e) => dispatch(setSearchQuery(e.target.value))}
+          className="topbar-search"
         />
       )}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
+      <div className="topbar-row">
+        <div className="topbar-left">
           {isAdmin && (
-            <button className="button-primary" onClick={handleAddSubscriptionClick}>+ Add Subscription</button>
+            <button type="button" onClick={handleAddSubscriptionClick} className="btn-add-subscription">
+              + Add Subscription
+            </button>
           )}
-          <div style={{ background: 'var(--color-accent2)', color: '#fff', borderRadius: 16, padding: '8px 20px', fontWeight: 700, fontSize: 18 }}>
-            {today}
-          </div>
-          {user && (
-            <span style={{ color: 'var(--color-text)', fontSize: 14 }}>
-              Welcome, {user.name || user.email}
-            </span>
-          )}
+          <div className="topbar-date">{today}</div>
+          {user && <span className="topbar-welcome">Welcome, {user.name || user.email}</span>}
         </div>
-        <button 
-          onClick={handleLogout}
-          style={{
-            background: 'var(--color-error)',
-            color: '#fff',
-            border: 'none',
-            borderRadius: 8,
-            padding: '8px 16px',
-            cursor: 'pointer',
-            fontSize: 14,
-            fontWeight: 500,
-            transition: 'background 0.2s'
-          }}
-          onMouseEnter={(e) => e.target.style.background = '#dc2626'}
-          onMouseLeave={(e) => e.target.style.background = 'var(--color-error)'}
-        >
+        <button type="button" onClick={handleLogout} className="btn-logout">
           Logout
         </button>
       </div>
-      <SubscriberPickerModal
-        isOpen={pickerOpen}
-        onClose={() => setPickerOpen(false)}
-        onSelect={handleSubscriberSelect}
-      />
+      <SubscriberPickerModal isOpen={pickerOpen} onClose={() => setPickerOpen(false)} onSelect={handleSubscriberSelect} />
     </div>
   );
-} 
+}

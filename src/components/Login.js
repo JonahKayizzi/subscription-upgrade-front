@@ -2,54 +2,6 @@ import React, { useState } from 'react';
 import { useLoginMutation } from '../api/apiSlice';
 import { useDispatch } from 'react-redux';
 import { setCredentials } from '../features/auth/authSlice';
-import styled from 'styled-components';
-
-const Form = styled.form`
-  max-width: 340px;
-  margin: 2rem auto;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-`;
-
-const Input = styled.input`
-  padding: 12px 14px;
-  border-radius: 8px;
-  border: 1px solid #2d2156;
-  background: #231942;
-  color: #fff;
-  font-size: 1rem;
-  transition: border 0.2s, box-shadow 0.2s;
-  &:focus {
-    border-color: #a259f7;
-    box-shadow: 0 0 0 2px #a259f733;
-    outline: none;
-  }
-`;
-
-const Button = styled.button`
-  width: 100%;
-  padding: 12px 0;
-  border-radius: 8px;
-  border: none;
-  background: #f7b801;
-  color: #231942;
-  font-weight: 700;
-  font-size: 1.08rem;
-  cursor: pointer;
-  margin-top: 4px;
-  transition: background 0.2s, color 0.2s;
-  &:hover {
-    background: #ffd700;
-    color: #1a1333;
-  }
-`;
-
-const ErrorMsg = styled.div`
-  color: #ff4d4f;
-  margin-top: 4px;
-  text-align: center;
-`;
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -61,41 +13,26 @@ export default function Login() {
     e.preventDefault();
     try {
       const result = await login({ email, password }).unwrap();
-      dispatch(setCredentials({ 
-        token: result.token,
-        user: result.user 
-      }));
-      // Optionally redirect or show success
+      dispatch(setCredentials({ token: result.token, user: result.user }));
     } catch (err) {
-      // Handle error - err.data will contain the error message from the server
       console.error('Login error:', err);
     }
   };
 
   return (
-    <Form onSubmit={handleSubmit}>
-      <Input
-        value={email}
-        onChange={e => setEmail(e.target.value)}
-        placeholder="Email"
-        autoComplete="email"
-        type="email"
-      />
-      <Input
-        value={password}
-        onChange={e => setPassword(e.target.value)}
-        type="password"
-        placeholder="Password"
-        autoComplete="current-password"
-      />
-      <Button type="submit" disabled={isLoading}>
-        {isLoading ? 'Logging in...' : 'Login'}
-      </Button>
-      {error && (
-        <ErrorMsg>
-          {error.data?.error || error.data?.message || 'Login failed. Please check your credentials.'}
-        </ErrorMsg>
-      )}
-    </Form>
+    <form onSubmit={handleSubmit} className="form-auth">
+      <div className="form-field">
+        <label htmlFor="login-email" className="form-label">Email</label>
+        <input id="login-email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" autoComplete="email" type="email" className="form-input" />
+      </div>
+      <div className="form-field">
+        <label htmlFor="login-password" className="form-label">Password</label>
+        <input id="login-password" value={password} onChange={e => setPassword(e.target.value)} type="password" placeholder="••••••••" autoComplete="current-password" className="form-input" />
+      </div>
+      <button type="submit" disabled={isLoading} className="btn-auth">
+        {isLoading ? 'Signing in...' : 'Sign in'}
+      </button>
+      {error && <div className="error-message">{error.data?.error || error.data?.message || 'Login failed. Please check your credentials.'}</div>}
+    </form>
   );
-} 
+}
