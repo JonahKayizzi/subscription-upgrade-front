@@ -292,6 +292,14 @@ export const apiSlice = createApi({
         method: 'DELETE',
       }),
     }),
+    // Generate dispatch list PDF
+    generateDispatchList: builder.mutation({
+      query: (days = 30) => ({
+        url: `/dispatch-list?days=${days}`,
+        responseType: 'blob'
+      })
+    }),
+
   }),
 });
 
@@ -337,3 +345,5 @@ export const {
   useUpdateChartMutation,
   useDeleteChartMutation,
 } = apiSlice;
+  useGenerateDispatchListMutation,
+} = apiSlice; 
