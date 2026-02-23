@@ -7,13 +7,16 @@ import SubscriberDashboard from './components/SubscriberDashboard';
 import SubscribersTable from './components/SubscribersTable';
 import SubscriptionForm from './components/SubscriptionForm';
 import SubscriptionOrderForm from './components/SubscriptionOrderForm';
-// import AddSubscriptionPage from './components/AddSubscriptionPage';
+import AeronauticalCharts from './components/AeronauticalCharts';
+import MyChartOrders from './components/MyChartOrders';
+import ChartOrdersManagement from './components/ChartOrdersManagement';
 import { useSelector, useDispatch } from 'react-redux';
 import { Routes, Route } from 'react-router-dom';
 import { logout } from './features/auth/authSlice';
 import { checkSessionTimeout } from './utils/sessionUtils';
 import styled from 'styled-components';
-import { FaMap, FaBook, FaChartBar, FaEnvelope, FaPhone, FaDatabase, FaCheckCircle, FaUserShield, FaRocket, FaCloud, FaRegFileAlt, FaCompactDisc, FaGlobe, FaMapMarkerAlt, FaFileAlt, FaExclamationTriangle } from 'react-icons/fa';
+import { FaMap, FaBook, FaEnvelope, FaPhone, FaCheckCircle, FaCloud, FaRegFileAlt, FaCompactDisc, FaGlobe, FaMapMarkerAlt, FaFileAlt, FaExclamationTriangle } from 'react-icons/fa';
+
 const LandingContainer = styled.div`
   display: flex;
   min-height: 100vh;
@@ -42,7 +45,7 @@ const LeftPanel = styled.div`
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  padding: 0 16px 4px 0;
+  padding: 0 0 4px 0;
   margin-left: 0;
   background: transparent;
   overflow-y: auto;
@@ -407,73 +410,6 @@ const ProductsTitle = styled.h3`
   letter-spacing: 0.5px;
 `;
 
-
-
-const ProductsSpecs = styled.div`
-  display: flex;
-  gap: 20px;
-  margin-top: 4px;
-  
-  @media (max-width: 480px) {
-    flex-direction: column;
-    gap: 8px;
-  }
-`;
-
-const SpecItem = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-`;
-
-const SpecLabel = styled.span`
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #94a3b8;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-`;
-
-const SpecValue = styled.span`
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: #231942;
-`;
-
-const ProductsList = styled.ul`
-  margin: 8px 0 0 0;
-  padding: 0;
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-`;
-
-const ProductItem = styled.li`
-  font-size: 0.9rem;
-  color: #475569;
-  font-weight: 500;
-  
-  &::before {
-    content: '•';
-    color: #667eea;
-    font-weight: bold;
-    margin-right: 8px;
-  }
-`;
-
-const ProductsNote = styled.div`
-  font-size: 0.9rem;
-  color: #64748b;
-  font-weight: 600;
-  margin-top: 8px;
-  padding: 8px 12px;
-  background: #f8fafc;
-  border-radius: 6px;
-  border: 1px solid #e2e8f0;
-  display: inline-block;
-`;
-
 const ProductsGrid = styled.div`
   display: grid;
   grid-template-columns: 1fr 1fr 1fr 1fr;
@@ -579,6 +515,7 @@ const WelcomeContent = styled.div`
     gap: 16px;
   }
 `;
+
 const WelcomeText = styled.div`
   flex: 1;
 `;
@@ -599,7 +536,6 @@ const WelcomeDescription = styled.p`
   line-height: 1.5;
 `;
 
-// Pricing Breakdown Styled Components
 const PricingBreakdown = styled.div`
   margin-top: 0;
   padding: 0 0 24px 0;
@@ -609,16 +545,6 @@ const PricingBreakdown = styled.div`
   width: 100%;
 `;
 
-const BreakdownTitle = styled.h5`
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: ${({ dark }) => (dark ? '#fff' : '#1e293b')};
-  margin: 0 0 16px 0;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-`;
-
-// Update BreakdownTable and BreakdownCell for better alignment
 const BreakdownTable = styled.div`
   display: flex;
   flex-direction: column;
@@ -661,6 +587,7 @@ const BreakdownCell = styled.span`
     transform: translateY(-50%);
   }
 `;
+
 
 function App() {
   const token = useSelector(state => state.auth.token);
@@ -824,6 +751,7 @@ function App() {
                 </p>
               </div>
             </div>
+            
             <PricingSection>
               {/* eAIP Card */}
               <PricingCard gradient="linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%)" dark>
@@ -859,7 +787,7 @@ function App() {
                   <FeatureItem><FaCheckCircle /> Email notifications for updates</FeatureItem>
                 </FeatureList>
               </PricingCard>
-              {/* Paper Card */}
+              
               <PricingCard gradient="linear-gradient(135deg, #f7b801 0%, #f59e42 100%)">
                 <PlanTitle><FaRegFileAlt /> Paper</PlanTitle>
                 <PriceRow>271.4-431.9<PriceUnit>USD/year</PriceUnit></PriceRow>
@@ -913,7 +841,7 @@ function App() {
                   <FeatureItem><FaCheckCircle /> Support for organizations and individuals</FeatureItem>
                 </FeatureList>
               </PricingCard>
-              {/* CD Card */}
+              
               <PricingCard gradient="linear-gradient(135deg, #a259f7 0%, #ec4899 100%)" dark>
                 <PlanTitle><FaCompactDisc /> CD</PlanTitle>
                 <PriceRow>82.6-200.6<PriceUnit>USD/year</PriceUnit></PriceRow>
@@ -960,9 +888,13 @@ function App() {
                 </FeatureList>
               </PricingCard>
             </PricingSection>
+            
+            <div style={{ marginTop: '32px', width: '100%', marginRight: '20px' }}>
+              <AeronauticalCharts />
+            </div>
           </LeftPanel>
           <RightPanel>
-          <SubscriptionOrderForm />
+            <SubscriptionOrderForm />
             <ContactCard>
               <ContactBranding>
                 <ContactLogo>AIP</ContactLogo>
@@ -1003,12 +935,15 @@ function App() {
           <Route path="/" element={isAdmin ? <Dashboard /> : <SubscriberDashboard />} />
           {isAdmin && (
             <>
-          <Route path="/subscribers" element={<SubscribersTable />} />
-          <Route path="/subscriber/:id/add-subscription" element={<SubscriptionForm />} />
-          <Route path="/subscriber/:id/edit-subscription/:subscriptionId" element={<SubscriptionForm />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/subscribers" element={<SubscribersTable />} />
+              <Route path="/subscriber/:id/add-subscription" element={<SubscriptionForm />} />
+              <Route path="/subscriber/:id/edit-subscription/:subscriptionId" element={<SubscriptionForm />} />
+              <Route path="/charts" element={<AeronauticalCharts />} />
+              <Route path="/my-orders" element={<MyChartOrders />} />
+              <Route path="/admin/chart-orders" element={<ChartOrdersManagement />} />
             </>
           )}
-          {/* <Route path="/add-subscription" element={<AddSubscriptionPage />} /> */}
         </Routes>
       </div>
     </div>

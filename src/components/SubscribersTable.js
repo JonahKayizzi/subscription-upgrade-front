@@ -916,7 +916,6 @@ export default function SubscribersTable() {
                 </FormGrid>
                 <SaveButtonContainer>
                   <Button 
-                    style={{ padding: '10px 24px', fontSize: 14, background: 'var(--color-success)', color: '#fff' }}
                     onClick={handleSaveSubscriber}
                     disabled={isUpdatingSubscriber}
                   >
