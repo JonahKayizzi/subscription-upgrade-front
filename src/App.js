@@ -10,6 +10,7 @@ import AeronauticalCharts from "./components/AeronauticalCharts";
 import MyChartOrders from "./components/MyChartOrders";
 import ChartOrdersManagement from "./components/ChartOrdersManagement";
 import ChartsManagement from "./components/ChartsManagement";
+import InvoiceRequests from "./components/InvoiceRequests";
 import Modal from "./components/ui/Modal";
 import Login from "./components/Login";
 import Register from "./components/Register";
@@ -419,6 +420,7 @@ function App() {
                 element={<ChartOrdersManagement />}
               />
               <Route path="/admin/charts" element={<ChartsManagement />} />
+              <Route path="/admin/invoice-requests" element={<InvoiceRequests />} />
             </>
           )}
         </Routes>

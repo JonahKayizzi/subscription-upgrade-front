@@ -24,6 +24,7 @@ export default function SubscriptionOrderForm() {
     delivery_name: '', delivery_address: '', delivery_tel: '', delivery_fax: '', delivery_email: '',
     billing_name: '', billing_address: '', billing_tel: '', billing_fax: '', billing_email: '',
     publication: '', num_copies: '', reciprocal: false, on_payment: false,
+    invoice_requested: false,
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -94,6 +95,16 @@ export default function SubscriptionOrderForm() {
               <input name="billing_fax" value={form.billing_fax} onChange={handleChange} className="form-group-input" />
             </div>
           </div>
+          <div className="form-grid">
+            <div className="form-group">
+              <label className="form-group-label">Delivery Email<span className="required">*</span></label>
+              <input name="delivery_email" value={form.delivery_email} onChange={handleChange} type="email" required className="form-group-input" />
+            </div>
+            <div className="form-group">
+              <label className="form-group-label">Billing Email</label>
+              <input name="billing_email" value={form.billing_email} onChange={handleChange} type="email" className="form-group-input" />
+            </div>
+          </div>
         </div>
 
         <div style={{ marginBottom: '1.5rem' }}>
@@ -122,6 +133,10 @@ export default function SubscriptionOrderForm() {
               <input name="on_payment" type="checkbox" checked={form.on_payment} onChange={handleChange} />
               <label>On Payment</label>
             </div>
+          </div>
+          <div className="checkbox-group" style={{ marginTop: '1rem' }}>
+            <input name="invoice_requested" type="checkbox" checked={form.invoice_requested} onChange={handleChange} />
+            <label>I would like to request an invoice for this subscription renewal.</label>
           </div>
         </div>
 

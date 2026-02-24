@@ -3,8 +3,8 @@ import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import Card from './ui/Card';
 import styled from 'styled-components';
-import { FaFileAlt, FaUpload, FaDownload, FaCheckCircle, FaClock, FaExclamationTriangle, FaPlus, FaChevronDown, FaChevronUp, FaEye, FaTimes, FaMap, FaShoppingBag } from 'react-icons/fa';
-import { useGetSubscriberDashboardQuery, useRequestInvoiceMutation, useMarkInvoiceNotRequiredMutation, useUploadReceiptMutation, useUpdateSubscriberInfoMutation, useCreateRenewalSubscriptionMutation, useGetChartOrdersQuery } from '../api/apiSlice';
+import { FaFileAlt, FaUpload, FaDownload, FaCheckCircle, FaClock, FaExclamationTriangle, FaPlus, FaChevronDown, FaChevronUp, FaEye, FaTimes, FaMap, FaShoppingBag, FaFileInvoice } from 'react-icons/fa';
+import { useGetSubscriberDashboardQuery, useRequestInvoiceMutation, useMarkInvoiceNotRequiredMutation, useUploadReceiptMutation, useUpdateSubscriberInfoMutation, useCreateRenewalSubscriptionMutation, useGetChartOrdersQuery, useGetMyInvoicesQuery, useLazyGetInvoiceDownloadQuery, useLazyGetChartOrderInvoiceDownloadQuery } from '../api/apiSlice';
 import SubscriberInfoForm from './SubscriberInfoForm';
 import RenewalModal from './RenewalModal';
 import { SUBSCRIPTION_TYPES } from '../config/subscriptionTypes';
@@ -492,6 +492,82 @@ const QuickAccessBadge = styled.span`
   align-self: flex-start;
 `;
 
+function MyInvoicesSection() {
+  const { data, isLoading } = useGetMyInvoicesQuery();
+  const [triggerSubscriptionDownload, { isLoading: isDownloadingSub }] = useLazyGetInvoiceDownloadQuery();
+  const [triggerChartOrderDownload, { isLoading: isDownloadingCo }] = useLazyGetChartOrderInvoiceDownloadQuery();
+  const invoices = data?.invoices || [];
+  const isDownloading = isDownloadingSub || isDownloadingCo;
+
+  const handleDownload = async (inv) => {
+    const isChartOrder = inv.requestType === 'chart_order';
+    const trigger = isChartOrder ? triggerChartOrderDownload : triggerSubscriptionDownload;
+    const fileName = isChartOrder ? `chart-order-invoice-${inv.id}.pdf` : `invoice-${inv.id}.pdf`;
+    try {
+      const result = await trigger(inv.id).unwrap();
+      const url = window.URL.createObjectURL(result);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  return (
+    <div style={{ marginBottom: '32px' }} id="my-invoices">
+      <SectionTitle style={{ marginBottom: '16px' }}>
+        <FaFileInvoice style={{ marginRight: '8px', verticalAlign: 'middle' }} />
+        My Invoices
+      </SectionTitle>
+      <Card style={{ padding: '16px' }}>
+        {isLoading ? (
+          <div style={{ padding: '16px', color: 'var(--color-text-muted)' }}>Loading...</div>
+        ) : invoices.length === 0 ? (
+          <div style={{ padding: '24px', textAlign: 'center', color: 'var(--color-text-muted)' }}>
+            <FaFileInvoice style={{ fontSize: '2rem', marginBottom: '12px', opacity: 0.6 }} />
+            <p style={{ margin: 0, fontSize: '1rem' }}>No invoices yet</p>
+            <p style={{ margin: '8px 0 0', fontSize: '0.9rem' }}>When you request an invoice for a subscription renewal or chart order, it will appear here for download once ready.</p>
+          </div>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
+                  <th style={{ textAlign: 'left', padding: '10px 12px', color: 'var(--color-accent)' }}>Description</th>
+                  <th style={{ textAlign: 'left', padding: '10px 12px', color: 'var(--color-accent)' }}>Status</th>
+                  <th style={{ textAlign: 'left', padding: '10px 12px', color: 'var(--color-accent)' }}>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {invoices.map((inv) => (
+                  <tr key={`${inv.requestType || 'subscription'}-${inv.id}`} style={{ borderBottom: '1px solid var(--color-border)' }}>
+                    <td style={{ padding: '10px 12px' }}>{inv.requestType === 'chart_order' ? (inv.sub_type || 'Chart order') : `Renewal ${inv.sub_type || '2025'}`}</td>
+                    <td style={{ padding: '10px 12px' }}>
+                      {inv.invoice_status === 'uploaded' ? 'Uploaded' : 'Pending'}
+                    </td>
+                    <td style={{ padding: '10px 12px' }}>
+                      {inv.invoice_status === 'uploaded' ? (
+                        <ActionButton className="primary" onClick={() => handleDownload(inv)} disabled={isDownloading} style={{ fontSize: '0.8rem', padding: '6px 12px' }}>
+                          <FaDownload style={{ marginRight: '6px' }} /> Download
+                        </ActionButton>
+                      ) : (
+                        <span style={{ fontStyle: 'italic', color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>Invoice is being prepared</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
+    </div>
+  );
+}
+
 export default function SubscriberDashboard() {
   const user = useSelector(state => state.auth.user);
   const { data: dashboardData, isLoading, error, refetch } = useGetSubscriberDashboardQuery();
@@ -628,7 +704,7 @@ export default function SubscriberDashboard() {
     }
   };
 
-  const handleSubmitOrderForm = async (selectedOptions = []) => {
+  const handleSubmitOrderForm = async (selectedOptions = [], invoiceRequested = false) => {
     try {
       // Helper function to format date for MySQL DATE columns
       const formatMySQLDate = (date) => {
@@ -645,7 +721,8 @@ export default function SubscriberDashboard() {
         sub_status: 2, // pending
         order_sent_date: formatMySQLDate(now),
         order_received_date: formatMySQLDate(now),
-        selected_options: selectedOptions // Pass selected options to backend
+        selected_options: selectedOptions,
+        invoice_requested: !!invoiceRequested
       };
 
       await createRenewalSubscription(renewalData).unwrap();
@@ -728,7 +805,20 @@ export default function SubscriberDashboard() {
               <QuickAccessBadge>No orders yet →</QuickAccessBadge>
             )}
           </QuickAccessCard>
+
+          <QuickAccessCard as="div" onClick={() => document.getElementById('my-invoices')?.scrollIntoView({ behavior: 'smooth' })} style={{ cursor: 'pointer' }}>
+            <QuickAccessIcon>
+              <FaFileInvoice />
+            </QuickAccessIcon>
+            <QuickAccessTitle>My Invoices</QuickAccessTitle>
+            <QuickAccessDescription>
+              Download invoices for your subscription renewals and chart orders once they are ready.
+            </QuickAccessDescription>
+            <QuickAccessBadge>View & download →</QuickAccessBadge>
+          </QuickAccessCard>
         </QuickAccessGrid>
+
+        <MyInvoicesSection />
 
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>

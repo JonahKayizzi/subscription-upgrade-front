@@ -253,6 +253,7 @@ export default function ChartOrderForm({ chart, isOpen, onClose }) {
     special_instructions: '',
     reciprocal: false,
     on_payment: false,
+    invoice_requested: false,
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -357,6 +358,7 @@ export default function ChartOrderForm({ chart, isOpen, onClose }) {
           special_instructions: '',
           reciprocal: false,
           on_payment: false,
+          invoice_requested: false,
         });
         onClose();
       }, 2000);
@@ -503,6 +505,10 @@ export default function ChartOrderForm({ chart, isOpen, onClose }) {
                 <label htmlFor="on_payment">On Payment</label>
               </CheckboxGroup>
             </FormGrid>
+            <CheckboxGroup style={{ marginTop: '12px' }}>
+              <input id="invoice_requested" name="invoice_requested" type="checkbox" checked={form.invoice_requested} onChange={handleChange} />
+              <label htmlFor="invoice_requested">I would like to request an invoice for this chart order.</label>
+            </CheckboxGroup>
           </FormSection>
 
           {error && <ErrorText>{error}</ErrorText>}

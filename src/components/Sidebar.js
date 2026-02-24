@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../features/auth/authSlice';
-import { FiHome, FiUsers, FiPlusSquare, FiSettings, FiLogOut, FiBarChart2, FiShoppingBag, FiClipboard } from 'react-icons/fi';
+import { FiHome, FiUsers, FiPlusSquare, FiSettings, FiLogOut, FiBarChart2, FiShoppingBag, FiClipboard, FiFileText } from 'react-icons/fi';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import SubscriberPickerModal from './SubscriberPickerModal';
 
@@ -43,6 +43,7 @@ export default function Sidebar() {
         {isAdmin && (
           <>
             <Link to="/admin/chart-orders"><FiClipboard size={28} color={iconColor('/admin/chart-orders')} title="Manage All Orders" /></Link>
+            <Link to="/admin/invoice-requests"><FiFileText size={28} color={iconColor('/admin/invoice-requests')} title="Invoice Requests" /></Link>
             <Link to="/admin/charts"><FiBarChart2 size={28} color={iconColor('/admin/charts')} title="Manage Charts" /></Link>
           </>
         )}

@@ -185,6 +185,7 @@ const RenewalModal = ({
   isSubmitting 
 }) => {
   const [selectedOptions, setSelectedOptions] = useState({});
+  const [invoiceRequested, setInvoiceRequested] = useState(false);
 
   // Get subscription options based on type
   const getSubscriptionOptions = (type) => {
@@ -280,11 +281,23 @@ const RenewalModal = ({
               </OptionItem>
             ))}
           </OptionGroup>
+          <OptionGroupTitle style={{ marginTop: '16px' }}>Invoice</OptionGroupTitle>
+          <OptionItem style={{ marginTop: '8px' }}>
+            <Checkbox
+              type="checkbox"
+              id="invoice-request"
+              checked={invoiceRequested}
+              onChange={(e) => setInvoiceRequested(e.target.checked)}
+            />
+            <OptionLabel htmlFor="invoice-request">
+              I would like to request an invoice for this subscription renewal.
+            </OptionLabel>
+          </OptionItem>
         </OptionsSection>
 
         <ActionSection>
           <SubmitButton 
-            onClick={() => onSubmitOrderForm(getSelectedOptionsForSubmission())}
+            onClick={() => onSubmitOrderForm(getSelectedOptionsForSubmission(), invoiceRequested)}
             disabled={isSubmitting}
           >
             {isSubmitting ? (
