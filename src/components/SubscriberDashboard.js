@@ -10,47 +10,92 @@ import RenewalModal from './RenewalModal';
 import { SUBSCRIPTION_TYPES } from '../config/subscriptionTypes';
 
 const DashboardContainer = styled.div`
-  padding: 32px;
-  display: flex;
-  gap: 32px;
+  padding: 24px 32px 48px;
+  max-width: 1400px;
+  margin: 0 auto;
   min-height: 100vh;
-  
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 32px;
+  align-items: start;
+
   @media (max-width: 1200px) {
-    flex-direction: column;
+    grid-template-columns: 1fr;
+    padding: 20px 16px 40px;
+  }
+
+  @media (max-width: 768px) {
+    padding: 16px 12px 32px;
   }
 `;
 
 const LeftPanel = styled.div`
-  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 28px;
+  min-width: 0;
 `;
 
 const RightPanel = styled.div`
-  flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
-  align-items: center;
-  padding-top: 32px;
+  gap: 24px;
+  position: sticky;
+  top: 24px;
+
+  @media (max-width: 1200px) {
+    position: static;
+    order: -1;
+  }
 `;
 
 const WelcomeSection = styled.div`
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
-  padding: 32px;
+  padding: 28px 32px;
   border-radius: 16px;
-  margin-bottom: 24px;
+  box-shadow: 0 4px 20px rgba(102, 126, 234, 0.25);
 `;
 
 const WelcomeTitle = styled.h1`
-  font-size: 2rem;
-  margin-bottom: 8px;
+  font-size: 1.75rem;
+  margin: 0 0 6px 0;
+  font-weight: 600;
 `;
 
 const WelcomeSubtitle = styled.p`
-  font-size: 1.1rem;
+  font-size: 1rem;
+  opacity: 0.92;
+  margin: 0;
+`;
+
+const DashboardStatsRow = styled.div`
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-top: 24px;
+
+  @media (max-width: 600px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+const DashboardStat = styled.div`
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(8px);
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+`;
+
+const DashboardStatValue = styled.div`
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+`;
+
+const DashboardStatLabel = styled.div`
+  font-size: 0.8rem;
   opacity: 0.9;
 `;
 
@@ -79,36 +124,47 @@ const StatLabel = styled.div`
 `;
 
 const SectionTitle = styled.h2`
-  font-size: 1.5rem;
-  margin-bottom: 16px;
+  font-size: 1.35rem;
+  margin: 0 0 16px 0;
   color: var(--color-text);
+  font-weight: 600;
+`;
+
+const SubscriptionsSection = styled.div`
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  padding: 24px;
 `;
 
 const TabContainer = styled.div`
   display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
   border-bottom: 2px solid var(--color-border);
   margin-bottom: 24px;
 `;
 
 const Tab = styled.button`
-  padding: 12px 24px;
+  padding: 10px 18px;
   border: none;
   background: none;
   color: var(--color-text-muted);
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
   border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
   display: flex;
   align-items: center;
   gap: 8px;
-  
+
   &.active {
     color: var(--color-accent2);
     border-bottom-color: var(--color-accent2);
   }
-  
+
   &:hover {
     color: var(--color-text);
   }
@@ -426,11 +482,14 @@ const ExpiredBadge = styled.span`
 
 const QuickAccessGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 20px;
-  margin-bottom: 32px;
-  
-  @media (max-width: 768px) {
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  @media (max-width: 600px) {
     grid-template-columns: 1fr;
   }
 `;
@@ -439,18 +498,19 @@ const QuickAccessCard = styled(Link)`
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
   border-radius: 12px;
-  padding: 24px;
+  padding: 22px 20px;
   text-decoration: none;
   color: var(--color-text);
   transition: all 0.2s ease;
   display: flex;
   flex-direction: column;
   gap: 12px;
-  
+  min-height: 160px;
+
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    border-color: var(--color-accent);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+    border-color: var(--color-accent2);
   }
 `;
 
@@ -620,12 +680,12 @@ function MyInvoicesSection() {
   };
 
   return (
-    <div style={{ marginBottom: '32px' }} id="my-invoices">
+    <div style={{ marginBottom: '0' }} id="my-invoices">
       <SectionTitle style={{ marginBottom: '16px' }}>
         <FaFileInvoice style={{ marginRight: '8px', verticalAlign: 'middle' }} />
         My Invoices
       </SectionTitle>
-      <Card style={{ padding: '16px' }}>
+      <Card style={{ padding: '20px', borderRadius: '12px' }}>
         {isLoading ? (
           <div style={{ padding: '16px', color: 'var(--color-text-muted)' }}>Loading...</div>
         ) : invoices.length === 0 ? (
@@ -878,8 +938,22 @@ export default function SubscriberDashboard() {
         <WelcomeSection>
           <WelcomeTitle>Welcome back, {user?.name || user?.email}!</WelcomeTitle>
           <WelcomeSubtitle>Manage your AIP subscriptions and track your orders</WelcomeSubtitle>
+          <DashboardStatsRow>
+            <DashboardStat>
+              <DashboardStatValue>{activeSubscriptions}</DashboardStatValue>
+              <DashboardStatLabel>Active</DashboardStatLabel>
+            </DashboardStat>
+            <DashboardStat>
+              <DashboardStatValue>{pendingSubscriptions}</DashboardStatValue>
+              <DashboardStatLabel>Pending</DashboardStatLabel>
+            </DashboardStat>
+            <DashboardStat>
+              <DashboardStatValue>${totalAmount || '0'}</DashboardStatValue>
+              <DashboardStatLabel>Total (USD)</DashboardStatLabel>
+            </DashboardStat>
+          </DashboardStatsRow>
         </WelcomeSection>
-        
+
         <QuickAccessGrid>
           <QuickAccessCard to="/charts">
             <QuickAccessIcon>
@@ -926,15 +1000,15 @@ export default function SubscriberDashboard() {
 
         <MyInvoicesSection />
 
-        <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-            <SectionTitle>Your Subscriptions</SectionTitle>
+        <SubscriptionsSection>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '20px' }}>
+            <SectionTitle style={{ marginBottom: 0 }}>Your Subscriptions</SectionTitle>
             <ActionButton className="primary" onClick={handleNewSubscription}>
               <FaPlus style={{ marginRight: '8px' }} />
               New Subscription
             </ActionButton>
           </div>
-          
+
           <TabContainer>
             {subscriptionTypes.map(type => (
               <Tab
@@ -1400,7 +1474,7 @@ export default function SubscriberDashboard() {
                }
              })
            )}
-         </div>
+        </SubscriptionsSection>
        </LeftPanel>
 
        <RightPanel>
