@@ -492,6 +492,109 @@ const QuickAccessBadge = styled.span`
   align-self: flex-start;
 `;
 
+const NewSubModalOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+`;
+
+const NewSubModalContent = styled.div`
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  padding: 32px;
+  max-width: 560px;
+  width: 90%;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
+`;
+
+const NewSubModalTitle = styled.h2`
+  font-size: 1.5rem;
+  margin: 0 0 8px 0;
+  color: var(--color-text);
+`;
+
+const NewSubModalSubtitle = styled.p`
+  font-size: 0.95rem;
+  color: var(--color-text-muted);
+  margin: 0 0 24px 0;
+`;
+
+const NewSubTypeGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  @media (max-width: 600px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+const NewSubTypeCard = styled.button`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 16px;
+  border: 2px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+  &:hover {
+    border-color: var(--color-accent2);
+    background: rgba(167, 139, 250, 0.08);
+    transform: translateY(-2px);
+  }
+`;
+
+const NewSubTypeIcon = styled.div`
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent2) 100%);
+  color: white;
+`;
+
+const NewSubTypeLabel = styled.span`
+  font-weight: 600;
+  font-size: 1rem;
+`;
+
+const NewSubTypeDesc = styled.span`
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  line-height: 1.3;
+`;
+
+const NewSubCloseBtn = styled.button`
+  margin-top: 20px;
+  padding: 8px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  cursor: pointer;
+  width: 100%;
+  &:hover {
+    color: var(--color-text);
+    background: var(--color-bg);
+  }
+`;
+
 function MyInvoicesSection() {
   const { data, isLoading } = useGetMyInvoicesQuery();
   const [triggerSubscriptionDownload, { isLoading: isDownloadingSub }] = useLazyGetInvoiceDownloadQuery();
@@ -574,7 +677,8 @@ export default function SubscriberDashboard() {
   const { data: chartOrdersData } = useGetChartOrdersQuery();
   const [activeTab, setActiveTab] = useState('eAIP');
   const [expandedSubscriptions, setExpandedSubscriptions] = useState(new Set());
-  const [renewalModal, setRenewalModal] = useState({ isOpen: false, subscriptionType: null });
+  const [renewalModal, setRenewalModal] = useState({ isOpen: false, subscriptionType: null, isNew: false });
+  const [newSubscriptionTypeModalOpen, setNewSubscriptionTypeModalOpen] = useState(false);
   const [receiptFile, setReceiptFile] = useState(null);
   const [receiptNumber, setReceiptNumber] = useState('');
   const [isSubmittingReceipt, setIsSubmittingReceipt] = useState(false);
@@ -653,8 +757,12 @@ export default function SubscriberDashboard() {
   };
 
   const handleNewSubscription = () => {
-    // TODO: Navigate to subscription form
-    console.log('Starting new subscription');
+    setNewSubscriptionTypeModalOpen(true);
+  };
+
+  const handleChooseNewSubscriptionType = (typeId) => {
+    setNewSubscriptionTypeModalOpen(false);
+    setRenewalModal({ isOpen: true, subscriptionType: typeId, isNew: true });
   };
 
   const handleUpdateSubscriberInfo = async (formData) => {
@@ -683,25 +791,23 @@ export default function SubscriberDashboard() {
     });
   };
 
+  const baseUrlForFiles = (process.env.REACT_APP_API_URL || 'http://localhost:5000').replace(/\/api\/?$/, '');
+  const fileUrlForView = (filePath) => {
+    if (!filePath) return null;
+    const normalized = filePath.replace(/^\/?/, '').replace(/^uploads[/\\]/, '');
+    return `${baseUrlForFiles}/uploads/${normalized}`;
+  };
   const handleViewForm = (filePath) => {
-    if (filePath) {
-      const pdfUrl = `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/${filePath}`;
-      window.open(pdfUrl, '_blank');
-    }
+    const url = fileUrlForView(filePath);
+    if (url) window.open(url, '_blank');
   };
-
   const handleViewInvoice = (filePath) => {
-    if (filePath) {
-      const invoiceUrl = `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/${filePath}`;
-      window.open(invoiceUrl, '_blank');
-    }
+    const url = fileUrlForView(filePath);
+    if (url) window.open(url, '_blank');
   };
-
   const handleViewReceipt = (filePath) => {
-    if (filePath) {
-      const receiptUrl = `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/${filePath}`;
-      window.open(receiptUrl, '_blank');
-    }
+    const url = fileUrlForView(filePath);
+    if (url) window.open(url, '_blank');
   };
 
   const handleSubmitOrderForm = async (selectedOptions = [], invoiceRequested = false) => {
@@ -728,7 +834,7 @@ export default function SubscriberDashboard() {
       await createRenewalSubscription(renewalData).unwrap();
       
       // Close modal and refresh dashboard
-      setRenewalModal({ isOpen: false, subscriptionType: null });
+      setRenewalModal({ isOpen: false, subscriptionType: null, isNew: false });
       refetch(); // Refresh dashboard data
       
     } catch (err) {
@@ -1305,10 +1411,36 @@ export default function SubscriberDashboard() {
                  />
       </RightPanel>
 
+      {newSubscriptionTypeModalOpen && (
+        <NewSubModalOverlay onClick={() => setNewSubscriptionTypeModalOpen(false)}>
+          <NewSubModalContent onClick={(e) => e.stopPropagation()}>
+            <NewSubModalTitle>New Subscription</NewSubModalTitle>
+            <NewSubModalSubtitle>Choose the type of subscription you want to start</NewSubModalSubtitle>
+            <NewSubTypeGrid>
+              {subscriptionTypes.map((type) => (
+                <NewSubTypeCard
+                  key={type.id}
+                  type="button"
+                  onClick={() => handleChooseNewSubscriptionType(type.id)}
+                >
+                  <NewSubTypeIcon>{type.icon}</NewSubTypeIcon>
+                  <NewSubTypeLabel>{type.label}</NewSubTypeLabel>
+                  <NewSubTypeDesc>{type.description}</NewSubTypeDesc>
+                </NewSubTypeCard>
+              ))}
+            </NewSubTypeGrid>
+            <NewSubCloseBtn type="button" onClick={() => setNewSubscriptionTypeModalOpen(false)}>
+              Cancel
+            </NewSubCloseBtn>
+          </NewSubModalContent>
+        </NewSubModalOverlay>
+      )}
+
       <RenewalModal
         isOpen={renewalModal.isOpen}
-        onClose={() => setRenewalModal({ isOpen: false, subscriptionType: null })}
+        onClose={() => setRenewalModal({ isOpen: false, subscriptionType: null, isNew: false })}
         subscriptionType={renewalModal.subscriptionType}
+        isNewSubscription={renewalModal.isNew}
         onSubmitOrderForm={handleSubmitOrderForm}
         isSubmitting={createRenewalSubscription.isLoading}
       />

@@ -356,18 +356,30 @@ export default function SubscriptionForm() {
   // Determine if the subscription is expired
   const isExpired = isEditMode && subscriptionDetails && subscriptionDetails.status === 'expired';
 
+  // Normalize date from API (Date object or ISO string) to YYYY-MM-DD
+  const toDateOnly = (val) => {
+    if (!val) return '';
+    if (typeof val === 'string') return val.slice(0, 10);
+    if (val instanceof Date) return val.toISOString().split('T')[0];
+    return '';
+  };
+
   useEffect(() => {
     if (isEditMode && subscriptionDetails) {
+      const sd = subscriptionDetails;
+      // For pending renewals, sub_start_date/sub_exp_date may be null; use order dates so form is prepopulated with subscriber's request
+      const subStart = toDateOnly(sd.sub_start_date) || toDateOnly(sd.order_sent_date);
+      const subExp = toDateOnly(sd.sub_exp_date) || toDateOnly(sd.order_receive_date);
       setForm({
-        sub_type: subscriptionDetails.sub_type || '',
-        sub_start_date: subscriptionDetails.sub_start_date ? subscriptionDetails.sub_start_date.slice(0, 10) : '',
-        sub_exp_date: subscriptionDetails.sub_exp_date ? subscriptionDetails.sub_exp_date.slice(0, 10) : '',
-        sub_amount: subscriptionDetails.sub_amount || '',
-        sub_delivery: subscriptionDetails.sub_delivery || '',
-        sub_receipt_no: subscriptionDetails.receipt_no || '',
-        sub_invoice_no: subscriptionDetails.invoice_no || '',
-        eaip_user_name: subscriptionDetails.eaip_user_name || '',
-        eaip_password: subscriptionDetails.eaip_password || '',
+        sub_type: sd.sub_type || '',
+        sub_start_date: subStart,
+        sub_exp_date: subExp,
+        sub_amount: sd.sub_amount != null && sd.sub_amount !== '' ? String(sd.sub_amount) : '',
+        sub_delivery: sd.sub_delivery || '',
+        sub_receipt_no: sd.receipt_no || '',
+        sub_invoice_no: sd.invoice_no || '',
+        eaip_user_name: sd.eaip_user_name || '',
+        eaip_password: sd.eaip_password || '',
       });
     }
   }, [isEditMode, subscriptionDetails]);
@@ -407,7 +419,22 @@ export default function SubscriptionForm() {
       if (files.subscription_receipt) data.append('subscription_receipt', files.subscription_receipt);
       if (files.subscription_invoice) data.append('subscription_invoice', files.subscription_invoice);
       if (isEditMode) {
-        await updateSubscription({ id: subscriptionId, ...form }).unwrap();
+        await updateSubscription({
+          id: subscriptionId,
+          subscriber_id: id,
+          sub_type: form.sub_type,
+          sub_start_date: form.sub_start_date,
+          sub_exp_date: form.sub_exp_date,
+          sub_amount: form.sub_amount,
+          sub_delivery: form.sub_delivery,
+          receipt_no: form.sub_receipt_no,
+          invoice_no: form.sub_invoice_no,
+          eaip_user_name: form.eaip_user_name,
+          eaip_password: form.eaip_password,
+          ...(subscriptionDetails?.sub_status != null && { sub_status: subscriptionDetails.sub_status }),
+          ...(subscriptionDetails?.order_sent_date && { order_sent_date: subscriptionDetails.order_sent_date }),
+          ...(subscriptionDetails?.order_receive_date && { order_receive_date: subscriptionDetails.order_receive_date }),
+        }).unwrap();
       } else {
         await addSubscription(data).unwrap();
       }
@@ -441,25 +468,26 @@ export default function SubscriptionForm() {
   const hasInvoiceRequested = !!subscriptionDetails?.invoice_requested_date;
   const hasReceipt = !!subscriptionDetails?.subscription_receipt;
 
+  const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+  const fileUrl = (filePath) => {
+    if (!filePath) return null;
+    const normalized = filePath.replace(/^\/?/, '').replace(/^uploads[/\\]/, '');
+    return `${baseUrl.replace(/\/api\/?$/, '')}/uploads/${normalized}`;
+  };
+
   const handleViewForm = (formPath) => {
-    if (formPath) {
-      const pdfUrl = `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/${formPath}`;
-      window.open(pdfUrl, '_blank');
-    }
+    const url = fileUrl(formPath);
+    if (url) window.open(url, '_blank');
   };
 
   const handleViewInvoice = (invoicePath) => {
-    if (invoicePath) {
-      const invoiceUrl = `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/${invoicePath}`;
-      window.open(invoiceUrl, '_blank');
-    }
+    const url = fileUrl(invoicePath);
+    if (url) window.open(url, '_blank');
   };
 
   const handleViewReceipt = (receiptPath) => {
-    if (receiptPath) {
-      const receiptUrl = `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/${receiptPath}`;
-      window.open(receiptUrl, '_blank');
-    }
+    const url = fileUrl(receiptPath);
+    if (url) window.open(url, '_blank');
   };
 
   const handleRequestInvoice = async (subscriptionId) => {
@@ -736,7 +764,7 @@ export default function SubscriptionForm() {
        step: 'Receipt', 
        completed: hasReceipt && subscriptionDetails?.receipt_verified_date, 
        description: hasReceipt ? 
-         (subscriptionDetails?.receipt_verified_date ? 'Verified and activated' : 'Submitted - Pending verification') : 
+         (subscriptionDetails?.receipt_verified_date ? 'Verified and activated' : 'Submitted – Pending admin verification') : 
          (hasInvoice || isInvoiceNotRequired) ? 'Pending payment receipt' : 'Pending invoice',
        hasAction: hasReceipt || (hasInvoice || isInvoiceNotRequired),
                actionButton: hasReceipt ? (
@@ -757,7 +785,7 @@ export default function SubscriptionForm() {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px', marginLeft: 'auto' }}>
               <div style={{ fontSize: '0.75rem', color: 'var(--color-warning)', marginBottom: '8px' }}>
-                Receipt uploaded - Ready for verification
+                Receipt uploaded – Pending admin verification
               </div>
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                 <ActionButton 
@@ -770,7 +798,17 @@ export default function SubscriptionForm() {
                 </ActionButton>
                 <ActionButton 
                   className="success" 
-                  onClick={() => setShowReceiptVerificationModal(true)}
+                  onClick={() => {
+                    setReceiptVerificationData({
+                      sub_start_date: toDateOnly(subscriptionDetails?.sub_start_date) || toDateOnly(subscriptionDetails?.order_sent_date) || form.sub_start_date || '',
+                      sub_exp_date: toDateOnly(subscriptionDetails?.sub_exp_date) || toDateOnly(subscriptionDetails?.order_receive_date) || form.sub_exp_date || '',
+                      sub_amount: subscriptionDetails?.sub_amount != null && subscriptionDetails?.sub_amount !== '' ? String(subscriptionDetails.sub_amount) : form.sub_amount || '',
+                      sub_delivery: subscriptionDetails?.sub_delivery || form.sub_delivery || '',
+                      eaip_user_name: subscriptionDetails?.eaip_user_name || form.eaip_user_name || '',
+                      eaip_password: subscriptionDetails?.eaip_password || form.eaip_password || '',
+                    });
+                    setShowReceiptVerificationModal(true);
+                  }}
                   style={{ fontSize: '0.75rem', padding: '4px 8px' }}
                 >
                   <FaCheckCircle style={{ marginRight: '4px' }} />
