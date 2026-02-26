@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useLoginMutation } from '../api/apiSlice';
 import { useDispatch } from 'react-redux';
 import { setCredentials } from '../features/auth/authSlice';
@@ -28,6 +29,9 @@ export default function Login() {
       <div className="form-field">
         <label htmlFor="login-password" className="form-label">Password</label>
         <input id="login-password" value={password} onChange={e => setPassword(e.target.value)} type="password" placeholder="••••••••" autoComplete="current-password" className="form-input" />
+      </div>
+      <div style={{ marginBottom: 12, fontSize: '0.9rem' }}>
+        <Link to="/forgot-password" style={{ color: 'var(--color-accent2)' }}>Forgot password?</Link>
       </div>
       <button type="submit" disabled={isLoading} className="btn-auth">
         {isLoading ? 'Signing in...' : 'Sign in'}
