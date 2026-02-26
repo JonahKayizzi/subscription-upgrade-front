@@ -47,7 +47,9 @@ export default function Sidebar() {
             <Link to="/admin/charts"><FiBarChart2 size={28} color={iconColor('/admin/charts')} title="Manage Charts" /></Link>
           </>
         )}
-        <FiSettings size={28} color="#fff" title="Settings" />
+        <Link to="/settings">
+          <FiSettings size={28} color={iconColor('/settings')} title="Settings" />
+        </Link>
       </div>
       <div className="sidebar-logout">
         <button type="button" onClick={() => dispatch(logout())} title="Logout">

@@ -11,6 +11,7 @@ import MyChartOrders from "./components/MyChartOrders";
 import ChartOrdersManagement from "./components/ChartOrdersManagement";
 import ChartsManagement from "./components/ChartsManagement";
 import InvoiceRequests from "./components/InvoiceRequests";
+import SettingsPage from "./components/SettingsPage";
 import Modal from "./components/ui/Modal";
 import Login from "./components/Login";
 import Register from "./components/Register";
@@ -395,35 +396,36 @@ function App() {
       <div className="app-main">
         <Topbar />
         <div className="app-content">
-        <Routes>
-          <Route
-            path="/"
-            element={isAdmin ? <Dashboard /> : <SubscriberDashboard />}
-          />
-          <Route path="/charts" element={<AeronauticalCharts />} />
-          <Route path="/my-orders" element={<MyChartOrders />} />
-          {isAdmin && (
-            <>
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/subscribers" element={<SubscribersTable />} />
-              <Route
-                path="/subscriber/:id/add-subscription"
-                element={<SubscriptionForm />}
-              />
-              <Route
-                path="/subscriber/:id/edit-subscription/:subscriptionId"
-                element={<SubscriptionForm />}
-              />
-              <Route path="/admin/my-orders" element={<MyChartOrders />} />
-              <Route
-                path="/admin/chart-orders"
-                element={<ChartOrdersManagement />}
-              />
-              <Route path="/admin/charts" element={<ChartsManagement />} />
-              <Route path="/admin/invoice-requests" element={<InvoiceRequests />} />
-            </>
-          )}
-        </Routes>
+          <Routes>
+            <Route
+              path="/"
+              element={isAdmin ? <Dashboard /> : <SubscriberDashboard />}
+            />
+            <Route path="/charts" element={<AeronauticalCharts />} />
+            <Route path="/my-orders" element={<MyChartOrders />} />
+            <Route path="/settings" element={<SettingsPage />} />
+            {isAdmin && (
+              <>
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/subscribers" element={<SubscribersTable />} />
+                <Route
+                  path="/subscriber/:id/add-subscription"
+                  element={<SubscriptionForm />}
+                />
+                <Route
+                  path="/subscriber/:id/edit-subscription/:subscriptionId"
+                  element={<SubscriptionForm />}
+                />
+                <Route path="/admin/my-orders" element={<MyChartOrders />} />
+                <Route
+                  path="/admin/chart-orders"
+                  element={<ChartOrdersManagement />}
+                />
+                <Route path="/admin/charts" element={<ChartsManagement />} />
+                <Route path="/admin/invoice-requests" element={<InvoiceRequests />} />
+              </>
+            )}
+          </Routes>
         </div>
       </div>
     </div>
