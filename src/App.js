@@ -409,6 +409,34 @@ function App() {
                   <AeronauticalCharts />
                 </div>
               </section>
+
+              <footer className="landing-footer">
+                <div className="landing-footer-inner">
+                  <div className="landing-footer-brand">
+                    <span className="landing-footer-badge">AIP</span>
+                    <span>
+                      Uganda CAA · Aeronautical Information Publication
+                    </span>
+                  </div>
+                  <div className="landing-footer-links">
+                    <a href="mailto:ais@caa.co.ug">ais@caa.co.ug</a>
+                    <span>·</span>
+                    <a
+                      href="https://aim.caa.co.ug"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      aim.caa.co.ug
+                    </a>
+                    <span>·</span>
+                    <span>Tel: +256-312-352534 / 352503</span>
+                  </div>
+                  <div className="landing-footer-copy">
+                    © {new Date().getFullYear()} Uganda Civil Aviation
+                    Authority. All rights reserved.
+                  </div>
+                </div>
+              </footer>
             </div>
           }
         />
