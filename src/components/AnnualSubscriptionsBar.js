@@ -1,5 +1,4 @@
 import React from 'react';
-import styled from 'styled-components';
 import { Bar } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -13,19 +12,6 @@ import {
 import { getSubscriptionTypeColors } from '../config/subscriptionTypes';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
-
-const ChartContainer = styled.div`
-  background-color: var(--color-bg-card);
-  padding: 20px;
-  border-radius: 16px;
-  margin-top: 20px;
-  max-width: 500px;
-  width: 100%;
-  height: 250px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-`;
 
 export default function AnnualSubscriptionsBar({ data }) {
   const currentYear = new Date().getFullYear();
@@ -48,12 +34,7 @@ export default function AnnualSubscriptionsBar({ data }) {
     maintainAspectRatio: false,
     plugins: {
       legend: { display: false },
-      title: { 
-        display: true, 
-        text: `Subscriptions for ${currentYear}`, 
-        color: '#fff', 
-        font: { size: 18 } 
-      },
+      title: { display: true, text: `Subscriptions for ${currentYear}`, color: '#fff', font: { size: 18 } },
     },
     scales: {
       x: { ticks: { color: '#fff' }, grid: { color: 'rgba(255,255,255,0.05)' } },
@@ -62,8 +43,8 @@ export default function AnnualSubscriptionsBar({ data }) {
   };
 
   return (
-    <ChartContainer>
+    <div className="annual-subscriptions-chart">
       <Bar data={chartData} options={chartOptions} height={360} />
-    </ChartContainer>
+    </div>
   );
-} 
+}

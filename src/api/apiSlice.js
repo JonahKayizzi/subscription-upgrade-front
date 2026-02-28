@@ -29,6 +29,27 @@ export const apiSlice = createApi({
         body: userData,
       }),
     }),
+    changePassword: builder.mutation({
+      query: (payload) => ({
+        url: '/auth/change-password',
+        method: 'POST',
+        body: payload,
+      }),
+    }),
+    forgotPassword: builder.mutation({
+      query: (body) => ({
+        url: '/auth/forgot-password',
+        method: 'POST',
+        body,
+      }),
+    }),
+    resetPassword: builder.mutation({
+      query: (body) => ({
+        url: '/auth/reset-password',
+        method: 'POST',
+        body,
+      }),
+    }),
     // Subscribers
     getSubscribers: builder.query({
       query: () => '/subscribers',
@@ -120,13 +141,14 @@ export const apiSlice = createApi({
         body: { subscriptionId }
       })
     }),
-    // Upload invoice (admin)
+    // Upload invoice (admin). Pass either subscriptionId or chartOrderId.
     uploadInvoice: builder.mutation({
-      query: ({ subscriptionId, invoiceFile, invoiceNumber }) => {
+      query: ({ subscriptionId, chartOrderId, invoiceFile, invoiceNumber }) => {
         const formData = new FormData();
-        formData.append('subscriptionId', subscriptionId);
+        if (subscriptionId != null && subscriptionId !== '') formData.append('subscriptionId', String(subscriptionId));
+        if (chartOrderId != null && chartOrderId !== '') formData.append('chartOrderId', String(chartOrderId));
         formData.append('invoiceFile', invoiceFile);
-        formData.append('invoiceNumber', invoiceNumber);
+        if (invoiceNumber != null) formData.append('invoiceNumber', invoiceNumber);
         
         return {
           url: '/admin/upload-invoice',
@@ -221,6 +243,32 @@ export const apiSlice = createApi({
       query: (days = 30) => `/mailing-labels/paper-subscriptions?days=${days}`
     }),
 
+    // Invoice requests (admin): list where invoice_requested = true
+    getInvoiceRequests: builder.query({
+      query: (filter = 'all') => `/admin/invoice-requests?filter=${filter}`
+    }),
+
+    // Subscriber: my invoices (subscriptions where invoice_requested = true)
+    getMyInvoices: builder.query({
+      query: () => '/subscriber/invoices'
+    }),
+    // Subscriber: download subscription invoice PDF (returns blob)
+    getInvoiceDownload: builder.query({
+      query: (subscriptionId) => ({
+        url: `/subscriber/invoices/${subscriptionId}/download`,
+        // Use responseHandler so fetchBaseQuery returns a Blob
+        responseHandler: (response) => response.blob(),
+      })
+    }),
+    // Subscriber: download chart order invoice PDF (returns blob)
+    getChartOrderInvoiceDownload: builder.query({
+      query: (chartOrderId) => ({
+        url: `/subscriber/invoices/chart-order/${chartOrderId}/download`,
+        // Use responseHandler so fetchBaseQuery returns a Blob
+        responseHandler: (response) => response.blob(),
+      })
+    }),
+
     // Chart orders
     addChartOrder: builder.mutation({
       query: (data) => ({
@@ -296,7 +344,8 @@ export const apiSlice = createApi({
     generateDispatchList: builder.mutation({
       query: (days = 30) => ({
         url: `/dispatch-list?days=${days}`,
-        responseType: 'blob'
+        // Return blob for PDF generation endpoint
+        responseHandler: (response) => response.blob(),
       })
     }),
 
@@ -306,6 +355,9 @@ export const apiSlice = createApi({
 export const {
   useLoginMutation,
   useRegisterMutation,
+  useChangePasswordMutation,
+  useForgotPasswordMutation,
+  useResetPasswordMutation,
   useGetSubscribersQuery,
   useSearchSubscribersQuery,
   useGetSubscriberQuery,
@@ -332,6 +384,10 @@ export const {
   useSetInvoiceRequestDateAdminMutation,
   useGetNotificationsQuery,
   useGetPaperSubscriptionsForMailingLabelsQuery,
+  useGetInvoiceRequestsQuery,
+  useGetMyInvoicesQuery,
+  useLazyGetInvoiceDownloadQuery,
+  useLazyGetChartOrderInvoiceDownloadQuery,
   useAddChartOrderMutation,
   useGetChartOrdersQuery,
   useGetAllChartOrdersQuery,

@@ -3,7 +3,6 @@ import DashboardStats from './DashboardStats';
 import { RevenueKPIs, OperationalKPIs } from './DashboardKPIs';
 import Card from './ui/Card';
 import { useGetDashboardStatsQuery, useGetSubscribersQuery, useGetSubscriptionsQuery } from '../api/apiSlice';
-import styled from 'styled-components';
 import { Bar, Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -16,28 +15,9 @@ import {
   PointElement,
   LineElement
 } from 'chart.js';
-// import { useNavigate } from 'react-router-dom';
 import AdminSubscriptionRequestModal from './AdminSubscriptionRequestModal';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, ChartTooltip, ChartLegend, PointElement, LineElement);
-
-const HistoricalRevenueCard = styled(Card)`
-  margin-top: 24px;
-  padding: 20px;
-`;
-
-const ChartCardContainer = styled.div`
-  background: var(--color-bg-card);
-  padding: 16px;
-  border-radius: 8px;
-  margin-top: 16px;
-`;
-
-const ChartTitle = styled.h4`
-  margin-bottom: 16px;
-  color: var(--color-text);
-  text-align: center;
-`;
 
 // Helper function to format dates in a user-friendly way
 const formatDate = (dateString) => {
@@ -220,14 +200,14 @@ export default function Dashboard() {
         <Card>
           <RevenueKPIs />
         </Card>
-        <HistoricalRevenueCard>
+        <Card className="chart-card">
           <Line data={historicalRevenueData} options={historicalChartOptions} />
-        </HistoricalRevenueCard>
+        </Card>
 
-        <ChartCardContainer>
-          <ChartTitle>Monthly Revenue by Type</ChartTitle>
+        <div className="chart-card">
+          <h4 className="chart-title">Monthly Revenue by Type</h4>
           <Bar data={revenueData} options={chartOptions} />
-        </ChartCardContainer>
+        </div>
       </div>
       <div style={{ flex: 1, minWidth: 320 }}>
         <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start', flexWrap: 'wrap' }}>

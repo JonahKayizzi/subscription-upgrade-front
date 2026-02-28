@@ -3,54 +3,99 @@ import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import Card from './ui/Card';
 import styled from 'styled-components';
-import { FaFileAlt, FaUpload, FaDownload, FaCheckCircle, FaClock, FaExclamationTriangle, FaPlus, FaChevronDown, FaChevronUp, FaEye, FaTimes, FaMap, FaShoppingBag } from 'react-icons/fa';
-import { useGetSubscriberDashboardQuery, useRequestInvoiceMutation, useMarkInvoiceNotRequiredMutation, useUploadReceiptMutation, useUpdateSubscriberInfoMutation, useCreateRenewalSubscriptionMutation, useGetChartOrdersQuery } from '../api/apiSlice';
+import { FaFileAlt, FaUpload, FaDownload, FaCheckCircle, FaClock, FaExclamationTriangle, FaPlus, FaChevronDown, FaChevronUp, FaEye, FaTimes, FaMap, FaShoppingBag, FaFileInvoice } from 'react-icons/fa';
+import { useGetSubscriberDashboardQuery, useRequestInvoiceMutation, useMarkInvoiceNotRequiredMutation, useUploadReceiptMutation, useUpdateSubscriberInfoMutation, useCreateRenewalSubscriptionMutation, useGetChartOrdersQuery, useGetMyInvoicesQuery, useLazyGetInvoiceDownloadQuery, useLazyGetChartOrderInvoiceDownloadQuery } from '../api/apiSlice';
 import SubscriberInfoForm from './SubscriberInfoForm';
 import RenewalModal from './RenewalModal';
 import { SUBSCRIPTION_TYPES } from '../config/subscriptionTypes';
 
 const DashboardContainer = styled.div`
-  padding: 32px;
-  display: flex;
-  gap: 32px;
+  padding: 24px 32px 48px;
+  max-width: 1400px;
+  margin: 0 auto;
   min-height: 100vh;
-  
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 32px;
+  align-items: start;
+
   @media (max-width: 1200px) {
-    flex-direction: column;
+    grid-template-columns: 1fr;
+    padding: 20px 16px 40px;
+  }
+
+  @media (max-width: 768px) {
+    padding: 16px 12px 32px;
   }
 `;
 
 const LeftPanel = styled.div`
-  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 28px;
+  min-width: 0;
 `;
 
 const RightPanel = styled.div`
-  flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
-  align-items: center;
-  padding-top: 32px;
+  gap: 24px;
+  position: sticky;
+  top: 24px;
+
+  @media (max-width: 1200px) {
+    position: static;
+    order: -1;
+  }
 `;
 
 const WelcomeSection = styled.div`
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
-  padding: 32px;
+  padding: 28px 32px;
   border-radius: 16px;
-  margin-bottom: 24px;
+  box-shadow: 0 4px 20px rgba(102, 126, 234, 0.25);
 `;
 
 const WelcomeTitle = styled.h1`
-  font-size: 2rem;
-  margin-bottom: 8px;
+  font-size: 1.75rem;
+  margin: 0 0 6px 0;
+  font-weight: 600;
 `;
 
 const WelcomeSubtitle = styled.p`
-  font-size: 1.1rem;
+  font-size: 1rem;
+  opacity: 0.92;
+  margin: 0;
+`;
+
+const DashboardStatsRow = styled.div`
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-top: 24px;
+
+  @media (max-width: 600px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+const DashboardStat = styled.div`
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(8px);
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+`;
+
+const DashboardStatValue = styled.div`
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+`;
+
+const DashboardStatLabel = styled.div`
+  font-size: 0.8rem;
   opacity: 0.9;
 `;
 
@@ -79,36 +124,47 @@ const StatLabel = styled.div`
 `;
 
 const SectionTitle = styled.h2`
-  font-size: 1.5rem;
-  margin-bottom: 16px;
+  font-size: 1.35rem;
+  margin: 0 0 16px 0;
   color: var(--color-text);
+  font-weight: 600;
+`;
+
+const SubscriptionsSection = styled.div`
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  padding: 24px;
 `;
 
 const TabContainer = styled.div`
   display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
   border-bottom: 2px solid var(--color-border);
   margin-bottom: 24px;
 `;
 
 const Tab = styled.button`
-  padding: 12px 24px;
+  padding: 10px 18px;
   border: none;
   background: none;
   color: var(--color-text-muted);
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
   border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
   display: flex;
   align-items: center;
   gap: 8px;
-  
+
   &.active {
     color: var(--color-accent2);
     border-bottom-color: var(--color-accent2);
   }
-  
+
   &:hover {
     color: var(--color-text);
   }
@@ -426,11 +482,14 @@ const ExpiredBadge = styled.span`
 
 const QuickAccessGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 20px;
-  margin-bottom: 32px;
-  
-  @media (max-width: 768px) {
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  @media (max-width: 600px) {
     grid-template-columns: 1fr;
   }
 `;
@@ -439,18 +498,19 @@ const QuickAccessCard = styled(Link)`
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
   border-radius: 12px;
-  padding: 24px;
+  padding: 22px 20px;
   text-decoration: none;
   color: var(--color-text);
   transition: all 0.2s ease;
   display: flex;
   flex-direction: column;
   gap: 12px;
-  
+  min-height: 160px;
+
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    border-color: var(--color-accent);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+    border-color: var(--color-accent2);
   }
 `;
 
@@ -492,13 +552,193 @@ const QuickAccessBadge = styled.span`
   align-self: flex-start;
 `;
 
+const NewSubModalOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+`;
+
+const NewSubModalContent = styled.div`
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  padding: 32px;
+  max-width: 560px;
+  width: 90%;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
+`;
+
+const NewSubModalTitle = styled.h2`
+  font-size: 1.5rem;
+  margin: 0 0 8px 0;
+  color: var(--color-text);
+`;
+
+const NewSubModalSubtitle = styled.p`
+  font-size: 0.95rem;
+  color: var(--color-text-muted);
+  margin: 0 0 24px 0;
+`;
+
+const NewSubTypeGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  @media (max-width: 600px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+const NewSubTypeCard = styled.button`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 16px;
+  border: 2px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+  &:hover {
+    border-color: var(--color-accent2);
+    background: rgba(167, 139, 250, 0.08);
+    transform: translateY(-2px);
+  }
+`;
+
+const NewSubTypeIcon = styled.div`
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent2) 100%);
+  color: white;
+`;
+
+const NewSubTypeLabel = styled.span`
+  font-weight: 600;
+  font-size: 1rem;
+`;
+
+const NewSubTypeDesc = styled.span`
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  line-height: 1.3;
+`;
+
+const NewSubCloseBtn = styled.button`
+  margin-top: 20px;
+  padding: 8px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  cursor: pointer;
+  width: 100%;
+  &:hover {
+    color: var(--color-text);
+    background: var(--color-bg);
+  }
+`;
+
+function MyInvoicesSection() {
+  const { data, isLoading } = useGetMyInvoicesQuery();
+  const [triggerSubscriptionDownload, { isLoading: isDownloadingSub }] = useLazyGetInvoiceDownloadQuery();
+  const [triggerChartOrderDownload, { isLoading: isDownloadingCo }] = useLazyGetChartOrderInvoiceDownloadQuery();
+  const invoices = data?.invoices || [];
+  const isDownloading = isDownloadingSub || isDownloadingCo;
+
+  const handleDownload = async (inv) => {
+    const isChartOrder = inv.requestType === 'chart_order';
+    const trigger = isChartOrder ? triggerChartOrderDownload : triggerSubscriptionDownload;
+    const fileName = isChartOrder ? `chart-order-invoice-${inv.id}.pdf` : `invoice-${inv.id}.pdf`;
+    try {
+      const result = await trigger(inv.id).unwrap();
+      const url = window.URL.createObjectURL(result);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  return (
+    <div style={{ marginBottom: '0' }} id="my-invoices">
+      <SectionTitle style={{ marginBottom: '16px' }}>
+        <FaFileInvoice style={{ marginRight: '8px', verticalAlign: 'middle' }} />
+        My Invoices
+      </SectionTitle>
+      <Card style={{ padding: '20px', borderRadius: '12px' }}>
+        {isLoading ? (
+          <div style={{ padding: '16px', color: 'var(--color-text-muted)' }}>Loading...</div>
+        ) : invoices.length === 0 ? (
+          <div style={{ padding: '24px', textAlign: 'center', color: 'var(--color-text-muted)' }}>
+            <FaFileInvoice style={{ fontSize: '2rem', marginBottom: '12px', opacity: 0.6 }} />
+            <p style={{ margin: 0, fontSize: '1rem' }}>No invoices yet</p>
+            <p style={{ margin: '8px 0 0', fontSize: '0.9rem' }}>When you request an invoice for a subscription renewal or chart order, it will appear here for download once ready.</p>
+          </div>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
+                  <th style={{ textAlign: 'left', padding: '10px 12px', color: 'var(--color-accent)' }}>Description</th>
+                  <th style={{ textAlign: 'left', padding: '10px 12px', color: 'var(--color-accent)' }}>Status</th>
+                  <th style={{ textAlign: 'left', padding: '10px 12px', color: 'var(--color-accent)' }}>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {invoices.map((inv) => (
+                  <tr key={`${inv.requestType || 'subscription'}-${inv.id}`} style={{ borderBottom: '1px solid var(--color-border)' }}>
+                    <td style={{ padding: '10px 12px' }}>{inv.requestType === 'chart_order' ? (inv.sub_type || 'Chart order') : `Renewal ${inv.sub_type || '2025'}`}</td>
+                    <td style={{ padding: '10px 12px' }}>
+                      {inv.invoice_status === 'uploaded' ? 'Uploaded' : 'Pending'}
+                    </td>
+                    <td style={{ padding: '10px 12px' }}>
+                      {inv.invoice_status === 'uploaded' ? (
+                        <ActionButton className="primary" onClick={() => handleDownload(inv)} disabled={isDownloading} style={{ fontSize: '0.8rem', padding: '6px 12px' }}>
+                          <FaDownload style={{ marginRight: '6px' }} /> Download
+                        </ActionButton>
+                      ) : (
+                        <span style={{ fontStyle: 'italic', color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>Invoice is being prepared</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
+    </div>
+  );
+}
+
 export default function SubscriberDashboard() {
   const user = useSelector(state => state.auth.user);
   const { data: dashboardData, isLoading, error, refetch } = useGetSubscriberDashboardQuery();
   const { data: chartOrdersData } = useGetChartOrdersQuery();
   const [activeTab, setActiveTab] = useState('eAIP');
   const [expandedSubscriptions, setExpandedSubscriptions] = useState(new Set());
-  const [renewalModal, setRenewalModal] = useState({ isOpen: false, subscriptionType: null });
+  const [renewalModal, setRenewalModal] = useState({ isOpen: false, subscriptionType: null, isNew: false });
+  const [newSubscriptionTypeModalOpen, setNewSubscriptionTypeModalOpen] = useState(false);
   const [receiptFile, setReceiptFile] = useState(null);
   const [receiptNumber, setReceiptNumber] = useState('');
   const [isSubmittingReceipt, setIsSubmittingReceipt] = useState(false);
@@ -577,8 +817,12 @@ export default function SubscriberDashboard() {
   };
 
   const handleNewSubscription = () => {
-    // TODO: Navigate to subscription form
-    console.log('Starting new subscription');
+    setNewSubscriptionTypeModalOpen(true);
+  };
+
+  const handleChooseNewSubscriptionType = (typeId) => {
+    setNewSubscriptionTypeModalOpen(false);
+    setRenewalModal({ isOpen: true, subscriptionType: typeId, isNew: true });
   };
 
   const handleUpdateSubscriberInfo = async (formData) => {
@@ -607,28 +851,26 @@ export default function SubscriberDashboard() {
     });
   };
 
+  const baseUrlForFiles = (process.env.REACT_APP_API_URL || 'http://localhost:5000').replace(/\/api\/?$/, '');
+  const fileUrlForView = (filePath) => {
+    if (!filePath) return null;
+    const normalized = filePath.replace(/^\/?/, '').replace(/^uploads[/\\]/, '');
+    return `${baseUrlForFiles}/uploads/${normalized}`;
+  };
   const handleViewForm = (filePath) => {
-    if (filePath) {
-      const pdfUrl = `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/${filePath}`;
-      window.open(pdfUrl, '_blank');
-    }
+    const url = fileUrlForView(filePath);
+    if (url) window.open(url, '_blank');
   };
-
   const handleViewInvoice = (filePath) => {
-    if (filePath) {
-      const invoiceUrl = `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/${filePath}`;
-      window.open(invoiceUrl, '_blank');
-    }
+    const url = fileUrlForView(filePath);
+    if (url) window.open(url, '_blank');
   };
-
   const handleViewReceipt = (filePath) => {
-    if (filePath) {
-      const receiptUrl = `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/${filePath}`;
-      window.open(receiptUrl, '_blank');
-    }
+    const url = fileUrlForView(filePath);
+    if (url) window.open(url, '_blank');
   };
 
-  const handleSubmitOrderForm = async (selectedOptions = []) => {
+  const handleSubmitOrderForm = async (selectedOptions = [], invoiceRequested = false) => {
     try {
       // Helper function to format date for MySQL DATE columns
       const formatMySQLDate = (date) => {
@@ -645,13 +887,14 @@ export default function SubscriberDashboard() {
         sub_status: 2, // pending
         order_sent_date: formatMySQLDate(now),
         order_received_date: formatMySQLDate(now),
-        selected_options: selectedOptions // Pass selected options to backend
+        selected_options: selectedOptions,
+        invoice_requested: !!invoiceRequested
       };
 
       await createRenewalSubscription(renewalData).unwrap();
       
       // Close modal and refresh dashboard
-      setRenewalModal({ isOpen: false, subscriptionType: null });
+      setRenewalModal({ isOpen: false, subscriptionType: null, isNew: false });
       refetch(); // Refresh dashboard data
       
     } catch (err) {
@@ -695,8 +938,22 @@ export default function SubscriberDashboard() {
         <WelcomeSection>
           <WelcomeTitle>Welcome back, {user?.name || user?.email}!</WelcomeTitle>
           <WelcomeSubtitle>Manage your AIP subscriptions and track your orders</WelcomeSubtitle>
+          <DashboardStatsRow>
+            <DashboardStat>
+              <DashboardStatValue>{activeSubscriptions}</DashboardStatValue>
+              <DashboardStatLabel>Active</DashboardStatLabel>
+            </DashboardStat>
+            <DashboardStat>
+              <DashboardStatValue>{pendingSubscriptions}</DashboardStatValue>
+              <DashboardStatLabel>Pending</DashboardStatLabel>
+            </DashboardStat>
+            <DashboardStat>
+              <DashboardStatValue>${totalAmount || '0'}</DashboardStatValue>
+              <DashboardStatLabel>Total (USD)</DashboardStatLabel>
+            </DashboardStat>
+          </DashboardStatsRow>
         </WelcomeSection>
-        
+
         <QuickAccessGrid>
           <QuickAccessCard to="/charts">
             <QuickAccessIcon>
@@ -728,17 +985,30 @@ export default function SubscriberDashboard() {
               <QuickAccessBadge>No orders yet →</QuickAccessBadge>
             )}
           </QuickAccessCard>
+
+          <QuickAccessCard as="div" onClick={() => document.getElementById('my-invoices')?.scrollIntoView({ behavior: 'smooth' })} style={{ cursor: 'pointer' }}>
+            <QuickAccessIcon>
+              <FaFileInvoice />
+            </QuickAccessIcon>
+            <QuickAccessTitle>My Invoices</QuickAccessTitle>
+            <QuickAccessDescription>
+              Download invoices for your subscription renewals and chart orders once they are ready.
+            </QuickAccessDescription>
+            <QuickAccessBadge>View & download →</QuickAccessBadge>
+          </QuickAccessCard>
         </QuickAccessGrid>
 
-        <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-            <SectionTitle>Your Subscriptions</SectionTitle>
+        <MyInvoicesSection />
+
+        <SubscriptionsSection>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '20px' }}>
+            <SectionTitle style={{ marginBottom: 0 }}>Your Subscriptions</SectionTitle>
             <ActionButton className="primary" onClick={handleNewSubscription}>
               <FaPlus style={{ marginRight: '8px' }} />
               New Subscription
             </ActionButton>
           </div>
-          
+
           <TabContainer>
             {subscriptionTypes.map(type => (
               <Tab
@@ -1204,7 +1474,7 @@ export default function SubscriberDashboard() {
                }
              })
            )}
-         </div>
+        </SubscriptionsSection>
        </LeftPanel>
 
        <RightPanel>
@@ -1215,10 +1485,36 @@ export default function SubscriberDashboard() {
                  />
       </RightPanel>
 
+      {newSubscriptionTypeModalOpen && (
+        <NewSubModalOverlay onClick={() => setNewSubscriptionTypeModalOpen(false)}>
+          <NewSubModalContent onClick={(e) => e.stopPropagation()}>
+            <NewSubModalTitle>New Subscription</NewSubModalTitle>
+            <NewSubModalSubtitle>Choose the type of subscription you want to start</NewSubModalSubtitle>
+            <NewSubTypeGrid>
+              {subscriptionTypes.map((type) => (
+                <NewSubTypeCard
+                  key={type.id}
+                  type="button"
+                  onClick={() => handleChooseNewSubscriptionType(type.id)}
+                >
+                  <NewSubTypeIcon>{type.icon}</NewSubTypeIcon>
+                  <NewSubTypeLabel>{type.label}</NewSubTypeLabel>
+                  <NewSubTypeDesc>{type.description}</NewSubTypeDesc>
+                </NewSubTypeCard>
+              ))}
+            </NewSubTypeGrid>
+            <NewSubCloseBtn type="button" onClick={() => setNewSubscriptionTypeModalOpen(false)}>
+              Cancel
+            </NewSubCloseBtn>
+          </NewSubModalContent>
+        </NewSubModalOverlay>
+      )}
+
       <RenewalModal
         isOpen={renewalModal.isOpen}
-        onClose={() => setRenewalModal({ isOpen: false, subscriptionType: null })}
+        onClose={() => setRenewalModal({ isOpen: false, subscriptionType: null, isNew: false })}
         subscriptionType={renewalModal.subscriptionType}
+        isNewSubscription={renewalModal.isNew}
         onSubmitOrderForm={handleSubmitOrderForm}
         isSubmitting={createRenewalSubscription.isLoading}
       />

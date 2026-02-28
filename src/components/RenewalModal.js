@@ -181,10 +181,12 @@ const RenewalModal = ({
   isOpen, 
   onClose, 
   subscriptionType, 
+  isNewSubscription = false,
   onSubmitOrderForm,
   isSubmitting 
 }) => {
   const [selectedOptions, setSelectedOptions] = useState({});
+  const [invoiceRequested, setInvoiceRequested] = useState(false);
 
   // Get subscription options based on type
   const getSubscriptionOptions = (type) => {
@@ -199,13 +201,13 @@ const RenewalModal = ({
       
       if (type === 'eAIP') {
         price = '120 USD';
-      } else if (type === 'Paper AIP') {
+      } else if (type === 'paper' || type === 'Paper AIP') {
         if (option.includes('hand delivery')) price = '230 USD';
         else if (option.includes('postage within country')) price = '293 USD';
         else if (option.includes('postage within Africa')) price = '327 USD';
         else if (option.includes('rest of the world')) price = '366 USD';
         else price = '230 USD';
-      } else if (type === 'CD AIP') {
+      } else if (type === 'CD' || type === 'CD AIP') {
         if (option.includes('hand delivery')) price = '70 USD';
         else if (option.includes('postage within country')) price = '100 USD';
         else if (option.includes('postage within Africa')) price = '130 USD';
@@ -247,8 +249,12 @@ const RenewalModal = ({
     <ModalOverlay onClick={onClose}>
       <ModalContent onClick={(e) => e.stopPropagation()}>
         <ModalHeader>
-          <ModalTitle>Renew {subscriptionType} Subscription</ModalTitle>
-          <ModalSubtitle>Select your subscription options and complete your renewal request</ModalSubtitle>
+          <ModalTitle>{isNewSubscription ? 'New' : 'Renew'} {subscriptionType} Subscription</ModalTitle>
+          <ModalSubtitle>
+            {isNewSubscription
+              ? 'Select your subscription options and submit your order form to start your new subscription.'
+              : 'Select your subscription options and complete your renewal request'}
+          </ModalSubtitle>
         </ModalHeader>
 
         <NotificationSection>
@@ -256,7 +262,7 @@ const RenewalModal = ({
             <FaExclamationTriangle />
           </NotificationIcon>
           <NotificationText>
-            <strong>Notification:</strong> Ensure your subscriber information is up to date before proceeding with the renewal.
+            <strong>Notification:</strong> Ensure your subscriber information is up to date before proceeding with the {isNewSubscription ? 'new subscription' : 'renewal'}.
           </NotificationText>
         </NotificationSection>
 
@@ -280,11 +286,23 @@ const RenewalModal = ({
               </OptionItem>
             ))}
           </OptionGroup>
+          <OptionGroupTitle style={{ marginTop: '16px' }}>Invoice</OptionGroupTitle>
+          <OptionItem style={{ marginTop: '8px' }}>
+            <Checkbox
+              type="checkbox"
+              id="invoice-request"
+              checked={invoiceRequested}
+              onChange={(e) => setInvoiceRequested(e.target.checked)}
+            />
+            <OptionLabel htmlFor="invoice-request">
+              I would like to request an invoice for this subscription renewal.
+            </OptionLabel>
+          </OptionItem>
         </OptionsSection>
 
         <ActionSection>
           <SubmitButton 
-            onClick={() => onSubmitOrderForm(getSelectedOptionsForSubmission())}
+            onClick={() => onSubmitOrderForm(getSelectedOptionsForSubmission(), invoiceRequested)}
             disabled={isSubmitting}
           >
             {isSubmitting ? (
@@ -295,7 +313,7 @@ const RenewalModal = ({
             ) : (
               <>
                 <FaFileAlt />
-                Submit Order Form
+                {isNewSubscription ? 'Submit New Subscription' : 'Submit Order Form'}
               </>
             )}
           </SubmitButton>

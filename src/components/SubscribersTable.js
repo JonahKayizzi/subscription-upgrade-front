@@ -20,7 +20,7 @@ import {
   Legend,
 } from 'chart.js';
 import { FaUser, FaEnvelope, FaPhone, FaMapMarkerAlt, FaBox, FaInfoCircle, FaUserTie, FaCalendarAlt, FaRegBuilding, FaFileContract, FaPlus, FaFileExcel, FaDownload, FaSpinner } from 'react-icons/fa';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import AddSubscriberForm from './AddSubscriberForm';
 import AdminSubscriptionRequestModal from './AdminSubscriptionRequestModal';
 import { SUBSCRIPTION_TYPES, getSubscriptionType, hasCredentials, hasDelivery } from '../config/subscriptionTypes';
@@ -178,6 +178,24 @@ const NotificationItem = styled.div`
   border: 1px solid var(--color-border);
   margin-bottom: 8px;
   font-size: 14px;
+`;
+
+const RenewalDetailItem = styled.div`
+  padding: 10px 12px;
+  margin-top: 8px;
+  background: var(--color-bg);
+  border-radius: 6px;
+  border-left: 3px solid var(--color-accent2);
+  font-size: 13px;
+`;
+
+const RenewalDetailLink = styled(Link)`
+  display: inline-block;
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--color-accent2);
+  text-decoration: none;
+  &:hover { text-decoration: underline; }
 `;
 
 const ChartContainer = styled.div`
@@ -792,7 +810,7 @@ export default function SubscribersTable() {
               Loading notifications...
             </div>
           ) : notificationsData?.notifications?.length > 0 ? (
-            notificationsData.notifications.slice(0, 3).map((notification, index) => (
+            notificationsData.notifications.slice(0, 5).map((notification, index) => (
               <NotificationItem key={notification.id || index}>
                 <div style={{ 
                   color: notification.type === 'error' ? 'var(--color-error)' : 
@@ -805,6 +823,36 @@ export default function SubscribersTable() {
                 <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>
                   {formatTimeAgo(notification.timestamp)}
                 </div>
+                {notification.id === 'renewal_requests' && notification.details?.length > 0 && (
+                  <div style={{ marginTop: 8 }}>
+                    {notification.details.map((d) => (
+                      <RenewalDetailItem key={d.subscriptionId}>
+                        <strong>{d.subName || 'Unknown'}</strong>
+                        {d.subEmail && <div style={{ color: 'var(--color-text-muted)', fontSize: 12 }}>{d.subEmail}</div>}
+                        {d.subType != null && <div style={{ fontSize: 12 }}>{getSubscriptionType(d.subType)?.label || d.subType}</div>}
+                        {d.subDate && <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{formatDate(d.subDate)}</div>}
+                        <RenewalDetailLink to={`/subscriber/${d.subscriberId}/edit-subscription/${d.subscriptionId}`}>
+                          View / Process →
+                        </RenewalDetailLink>
+                      </RenewalDetailItem>
+                    ))}
+                  </div>
+                )}
+                {notification.id === 'receipts_pending_verification' && notification.details?.length > 0 && (
+                  <div style={{ marginTop: 8 }}>
+                    {notification.details.map((d) => (
+                      <RenewalDetailItem key={d.subscriptionId}>
+                        <strong>{d.subName || 'Unknown'}</strong>
+                        {d.subEmail && <div style={{ color: 'var(--color-text-muted)', fontSize: 12 }}>{d.subEmail}</div>}
+                        {d.subType != null && <div style={{ fontSize: 12 }}>{getSubscriptionType(d.subType)?.label || d.subType}</div>}
+                        {d.receiptReceivedDate && <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>Receipt received {formatDate(d.receiptReceivedDate)}</div>}
+                        <RenewalDetailLink to={`/subscriber/${d.subscriberId}/edit-subscription/${d.subscriptionId}`}>
+                          View / Verify receipt →
+                        </RenewalDetailLink>
+                      </RenewalDetailItem>
+                    ))}
+                  </div>
+                )}
               </NotificationItem>
             ))
           ) : (
