@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useGetSubscribersQuery, useSearchSubscribersQuery, useDeleteSubscriberMutation, useGetSubscriberQuery, useUpdateSubscriberMutation, useGetAnnualSubscriptionReportQuery, useGetNotificationsQuery, useGetPaperSubscriptionsForMailingLabelsQuery } from '../api/apiSlice';
 import { printMailingLabels, downloadMailingLabels } from '../utils/mailingLabels';
 import { printDispatchList } from '../utils/dispatchList';
@@ -406,6 +406,7 @@ export default function SubscribersTable() {
   const [mailingLabelsStatus, setMailingLabelsStatus] = useState(null);
   const [isLoadingDispatchList, setIsLoadingDispatchList] = useState(false);
   const [dispatchListStatus, setDispatchListStatus] = useState(null);
+  const [deletedSubscriberIds, setDeletedSubscriberIds] = useState(new Set());
   const { data: subscriberDetails, isLoading: isLoadingDetails, refetch } = useGetSubscriberQuery(selected?.sub_id, { skip: !selected });
   const { data: annualReportData, isLoading: isReportLoading } = useGetAnnualSubscriptionReportQuery();
   const { data: notificationsData, isLoading: isLoadingNotifications } = useGetNotificationsQuery();
@@ -430,32 +431,59 @@ export default function SubscribersTable() {
     }
   }, [subscriberDetails]);
 
-  if (isLoadingAll && globalSearchQuery === '') return <Card>Loading subscribers...</Card>;
-  if (isLoadingSearch && globalSearchQuery !== '') return <Card>Searching subscribers...</Card>;
-  if (allError || searchError) return <Card>Error loading subscribers.</Card>;
-
   const data = globalSearchQuery !== '' ? searchData : allData;
   const subscribers = data?.subscribers || [];
   const lags = data?.lags || [];
   const revenue = data?.revenue || { total: 0, by_type: {}, monthly: [] };
 
-  const sortedSubscribers = [...subscribers].sort((a, b) => 
+  // Keep all active listings free of deleted / soft-deleted subscribers
+  const isSubscriberActive = (subscriber) => {
+    if (!subscriber) return false;
+    const deleted = (
+      subscriber.deleted_at != null ||
+      subscriber.deletedAt != null ||
+      subscriber.sub_deleted === 1 ||
+      subscriber.sub_deleted === true ||
+      subscriber.is_deleted === 1 ||
+      subscriber.is_deleted === true ||
+      subscriber.isDeleted === 1 ||
+      subscriber.isDeleted === true ||
+      subscriber.removed === 1 ||
+      subscriber.removed === true
+    );
+    return !deleted;
+  };
+
+  const visibleSubscribers = useMemo(
+    () =>
+      subscribers.filter(
+        (subscriber) =>
+          isSubscriberActive(subscriber) && !deletedSubscriberIds.has(subscriber.sub_id)
+      ),
+    [subscribers, deletedSubscriberIds]
+  );
+
+  const sortedSubscribers = [...visibleSubscribers].sort((a, b) =>
     a.sub_name.localeCompare(b.sub_name)
   );
 
+  if (isLoadingAll && globalSearchQuery === '') return <Card>Loading subscribers...</Card>;
+  if (isLoadingSearch && globalSearchQuery !== '') return <Card>Searching subscribers...</Card>;
+  if (allError || searchError) return <Card>Error loading subscribers.</Card>;
+
   const currentYear = new Date().getFullYear();
   const stats = {
-    total: subscribers.length,
-    active: subscribers.filter(sub => 
+    total: visibleSubscribers.length,
+    active: visibleSubscribers.filter(sub => 
       Object.values(sub.subscription_status).some(status => status === 'active')
     ).length,
-    expired: subscribers.filter(sub => 
+    expired: visibleSubscribers.filter(sub => 
       Object.values(sub.subscription_status).some(status => status === 'expired')
     ).length,
-    inactive: subscribers.filter(sub => 
+    inactive: visibleSubscribers.filter(sub => 
       Object.values(sub.subscription_status).every(status => status === 'inactive' || status === 'none')
     ).length,
-    newThisYear: subscribers.filter(sub => 
+    newThisYear: visibleSubscribers.filter(sub => 
       new Date(sub.sub_add_date).getFullYear() === currentYear
     ).length,
     revenue: {
@@ -488,7 +516,11 @@ export default function SubscribersTable() {
     ]
   };
 
-  const top5Dormant = [...lags].sort((a, b) => b.lag_days - a.lag_days).slice(0, 5);
+  const activeSubscriberIds = new Set(visibleSubscribers.map(sub => sub.sub_id));
+  const top5Dormant = [...lags]
+    .filter((sub) => activeSubscriberIds.has(sub.sub_id))
+    .sort((a, b) => b.lag_days - a.lag_days)
+    .slice(0, 5);
 
   const chartLags = lags.filter(l => l.lag_days <= 365);
   const lagsBarData = {
@@ -685,6 +717,11 @@ export default function SubscribersTable() {
     if (window.confirm('Are you sure you want to delete this subscriber?')) {
       try {
         await deleteSubscriber(id).unwrap();
+        setDeletedSubscriberIds(prev => {
+          const next = new Set(prev);
+          next.add(id);
+          return next;
+        });
       } catch (err) {
         console.error('Failed to delete subscriber:', err);
       }
@@ -759,7 +796,7 @@ export default function SubscribersTable() {
                 ))}
               </tbody>
             </table>
-            {subscribers.length === 0 && (
+            {sortedSubscribers.length === 0 && (
               <div style={{ textAlign: 'center', padding: '20px 0', color: 'var(--color-text-muted)' }}>
                 No subscribers found matching your search.
               </div>

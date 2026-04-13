@@ -1,5 +1,36 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
+const isActiveSubscriber = (subscriber) => {
+  if (!subscriber) return false;
+  return !(
+    subscriber.deleted_at != null ||
+    subscriber.deletedAt != null ||
+    subscriber.sub_deleted === 1 ||
+    subscriber.sub_deleted === true ||
+    subscriber.is_deleted === 1 ||
+    subscriber.is_deleted === true ||
+    subscriber.isDeleted === 1 ||
+    subscriber.isDeleted === true ||
+    subscriber.removed === 1 ||
+    subscriber.removed === true
+  );
+};
+
+const filterDeletedSubscribersFromPayload = (payload = {}) => {
+  const subscribers = Array.isArray(payload.subscribers) ? payload.subscribers : [];
+  const activeSubscribers = subscribers.filter(isActiveSubscriber);
+  const activeSubscriberIds = new Set(activeSubscribers.map((subscriber) => subscriber.sub_id));
+  const lags = Array.isArray(payload.lags)
+    ? payload.lags.filter((lag) => activeSubscriberIds.has(lag.sub_id))
+    : [];
+
+  return {
+    ...payload,
+    subscribers: activeSubscribers,
+    lags,
+  };
+};
+
 export const apiSlice = createApi({
   reducerPath: 'api',
   baseQuery: fetchBaseQuery({
@@ -53,9 +84,11 @@ export const apiSlice = createApi({
     // Subscribers
     getSubscribers: builder.query({
       query: () => '/subscribers',
+      transformResponse: (response) => filterDeletedSubscribersFromPayload(response),
     }),
     searchSubscribers: builder.query({
       query: (query) => `/subscribers/search?query=${encodeURIComponent(query)}`,
+      transformResponse: (response) => filterDeletedSubscribersFromPayload(response),
     }),
     getSubscriber: builder.query({
       query: (id) => `/subscribers/${id}`,
