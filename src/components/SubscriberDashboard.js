@@ -924,8 +924,32 @@ export default function SubscriberDashboard() {
   }
 
   const { subscriptions = [], stats = {}, subscriber } = dashboardData || {};
-  const { activeSubscriptions = 0, pendingSubscriptions = 0, totalAmount = 0 } = stats;
+  const { activeSubscriptions = 0, pendingSubscriptions = 0 } = stats;
   const hasExistingData = subscriber && subscriber.sub_name;
+  const typeLabelById = SUBSCRIPTION_TYPES.reduce((acc, type) => {
+    acc[type.id] = type.label;
+    return acc;
+  }, {});
+  const statusPriority = { active: 0, pending: 1, expired: 2 };
+  const summarySubscription = [...subscriptions].sort((a, b) => {
+    const statusA = (a.status || '').toLowerCase();
+    const statusB = (b.status || '').toLowerCase();
+    const priorityA = statusPriority[statusA] ?? 3;
+    const priorityB = statusPriority[statusB] ?? 3;
+    if (priorityA !== priorityB) return priorityA - priorityB;
+    return new Date(b.sub_date || 0) - new Date(a.sub_date || 0);
+  })[0];
+  const summaryStatus = summarySubscription
+    ? (summarySubscription.status || (summarySubscription.sub_status === 2 ? 'pending' : 'inactive'))
+    : 'not started';
+  const summaryStatusLabel = summaryStatus.charAt(0).toUpperCase() + summaryStatus.slice(1);
+  const summaryType = summarySubscription
+    ? (summarySubscription.sub_type || summarySubscription.publication_type || 'Subscription')
+    : 'No subscription';
+  const summaryTypeLabel = typeLabelById[summaryType] || summaryType;
+  const summaryExpiry = summarySubscription?.sub_exp_date
+    ? new Date(summarySubscription.sub_exp_date).toLocaleDateString()
+    : (summaryStatus === 'pending' ? 'To be confirmed' : 'Not available');
   
   // Filter subscriptions by active tab and sort by most recent first
   const filteredSubscriptions = subscriptions
@@ -948,8 +972,8 @@ export default function SubscriberDashboard() {
               <DashboardStatLabel>Pending</DashboardStatLabel>
             </DashboardStat>
             <DashboardStat>
-              <DashboardStatValue>${totalAmount || '0'}</DashboardStatValue>
-              <DashboardStatLabel>Total (USD)</DashboardStatLabel>
+              <DashboardStatValue>{summaryStatusLabel}</DashboardStatValue>
+              <DashboardStatLabel>{summaryTypeLabel} • Expiry: {summaryExpiry}</DashboardStatLabel>
             </DashboardStat>
           </DashboardStatsRow>
         </WelcomeSection>
