@@ -34,7 +34,6 @@ import {
   FaGlobe,
   FaMapMarkerAlt,
   FaFileAlt,
-  FaExclamationTriangle,
 } from "react-icons/fa";
 
 const PRODUCT_ICONS = {
@@ -189,12 +188,6 @@ function App() {
                             name: "Aeronautical Information Circulars",
                             desc: "Important notices and information for aviation community",
                             iconBg: "emerald",
-                          },
-                          {
-                            icon: FaExclamationTriangle,
-                            name: "NOTAM & PIB",
-                            desc: "Notices to Airmen and Pre-flight Information Bulletins",
-                            iconBg: "red",
                           },
                           {
                             icon: FaMap,
