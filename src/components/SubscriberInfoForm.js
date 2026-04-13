@@ -3,37 +3,57 @@ import styled from 'styled-components';
 import Button from './ui/Button';
 
 const Card = styled.div`
-  background: #1e293b;
+  background: linear-gradient(180deg, #1f2c45 0%, #1b263b 100%);
   border-radius: 16px;
   box-shadow: 0 4px 24px rgba(0,0,0,0.2);
-  padding: 32px 32px 24px 32px;
-  min-width: 420px;
-  max-width: 700px;
-  margin: 0 auto;
+  padding: 28px 24px 22px;
+  width: 100%;
+  max-width: 760px;
+  margin: 0;
   color: #ffffff;
   border: 1px solid #334155;
+
+  @media (max-width: 992px) {
+    max-width: 100%;
+  }
+
+  @media (max-width: 768px) {
+    padding: 22px 16px 18px;
+    border-radius: 14px;
+  }
 `;
 
 const Title = styled.h2`
   margin: 0 0 24px 0;
-  font-size: 1.3rem;
+  font-size: 1.2rem;
   font-weight: 700;
   color: #ffffff;
   text-align: center;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+
+  @media (max-width: 768px) {
+    font-size: 1.05rem;
+    margin-bottom: 18px;
+    text-align: left;
+  }
 `;
 
 const FormGrid = styled.div`
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 20px;
+  gap: 16px;
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
 `;
 
 const FormGroup = styled.div`
   display: flex;
   flex-direction: column;
-  margin-bottom: 16px;
+  margin-bottom: 10px;
   
   &.full-width {
     grid-column: 1 / -1;
@@ -43,17 +63,18 @@ const FormGroup = styled.div`
     font-size: 0.9rem;
     color: #cbd5e1;
     margin-bottom: 6px;
-    font-weight: 500;
+    font-weight: 600;
   }
   
   input, select, textarea {
-    padding: 12px 16px;
+    padding: 11px 14px;
     border: 1px solid #475569;
     border-radius: 8px;
-    background: #2d3a4b;
+    background: #2a3a52;
     color: #ffffff;
     font-size: 0.95rem;
-    transition: border-color 0.2s ease;
+    width: 100%;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
     
     &:focus {
       outline: none;
@@ -78,13 +99,31 @@ const FormGroup = styled.div`
     resize: vertical;
     min-height: 80px;
   }
+
+  @media (max-width: 768px) {
+    margin-bottom: 8px;
+
+    label {
+      font-size: 0.85rem;
+    }
+
+    input, select, textarea {
+      font-size: 0.9rem;
+      padding: 10px 12px;
+    }
+  }
 `;
 
 const ButtonRow = styled.div`
   display: flex;
   justify-content: flex-end;
-  margin-top: 32px;
-  gap: 16px;
+  margin-top: 22px;
+  gap: 12px;
+
+  @media (max-width: 768px) {
+    justify-content: stretch;
+    margin-top: 16px;
+  }
 `;
 
 const ErrorText = styled.div`
@@ -277,12 +316,13 @@ export default function SubscriberInfoForm({ subscriberData, onSubmit, isUpdatin
               background: '#3b82f6',
               color: 'white',
               border: 'none',
-              padding: '12px 24px',
+              padding: '10px 20px',
               borderRadius: '8px',
               fontSize: '0.95rem',
               fontWeight: '600',
               cursor: isSubmitting ? 'not-allowed' : 'pointer',
-              opacity: isSubmitting ? 0.7 : 1
+              opacity: isSubmitting ? 0.7 : 1,
+              width: '100%'
             }}
           >
             {isSubmitting ? 'Saving...' : (isUpdating ? 'Update Information' : 'Submit Information')}

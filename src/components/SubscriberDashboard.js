@@ -279,6 +279,16 @@ const ActionButton = styled.button`
       background: #d97706;
     }
   }
+
+  &:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+  }
+
+  &.primary:disabled {
+    background: #9ca3af;
+    color: white;
+  }
 `;
 
 const FileUploadSection = styled.div`
@@ -587,58 +597,6 @@ const NewSubModalSubtitle = styled.p`
   margin: 0 0 24px 0;
 `;
 
-const NewSubTypeGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-  @media (max-width: 600px) {
-    grid-template-columns: 1fr;
-  }
-`;
-
-const NewSubTypeCard = styled.button`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  padding: 20px 16px;
-  border: 2px solid var(--color-border);
-  border-radius: 12px;
-  background: var(--color-bg);
-  color: var(--color-text);
-  cursor: pointer;
-  transition: all 0.2s;
-  text-align: center;
-  &:hover {
-    border-color: var(--color-accent2);
-    background: rgba(167, 139, 250, 0.08);
-    transform: translateY(-2px);
-  }
-`;
-
-const NewSubTypeIcon = styled.div`
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24px;
-  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent2) 100%);
-  color: white;
-`;
-
-const NewSubTypeLabel = styled.span`
-  font-weight: 600;
-  font-size: 1rem;
-`;
-
-const NewSubTypeDesc = styled.span`
-  font-size: 0.8rem;
-  color: var(--color-text-muted);
-  line-height: 1.3;
-`;
-
 const NewSubCloseBtn = styled.button`
   margin-top: 20px;
   padding: 8px 16px;
@@ -738,7 +696,7 @@ export default function SubscriberDashboard() {
   const [activeTab, setActiveTab] = useState('eAIP');
   const [expandedSubscriptions, setExpandedSubscriptions] = useState(new Set());
   const [renewalModal, setRenewalModal] = useState({ isOpen: false, subscriptionType: null, isNew: false });
-  const [newSubscriptionTypeModalOpen, setNewSubscriptionTypeModalOpen] = useState(false);
+  const [showSubscriberInfoPrompt, setShowSubscriberInfoPrompt] = useState(false);
   const [receiptFile, setReceiptFile] = useState(null);
   const [isSubmittingReceipt, setIsSubmittingReceipt] = useState(false);
   const [requestInvoice] = useRequestInvoiceMutation();
@@ -813,26 +771,37 @@ export default function SubscriberDashboard() {
     }
   };
 
-  const handleNewSubscription = () => {
-    setNewSubscriptionTypeModalOpen(true);
+  const hasActiveSubscriptionForType = (typeId, subs) => {
+    const list = subs ?? [];
+    return list.some(
+      (sub) =>
+        (sub.sub_type === typeId || sub.publication_type === typeId) &&
+        String(sub.status || '').toLowerCase() === 'active'
+    );
   };
 
-  const handleChooseNewSubscriptionType = (typeId) => {
-    setNewSubscriptionTypeModalOpen(false);
-    setRenewalModal({ isOpen: true, subscriptionType: typeId, isNew: true });
+  const handleNewSubscription = () => {
+    if (!isSubscriberInfoComplete) {
+      setShowSubscriberInfoPrompt(true);
+      document.getElementById('subscriber-info-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+    if (hasActiveSubscriptionForType(activeTab, dashboardData?.subscriptions)) return;
+    setRenewalModal({ isOpen: true, subscriptionType: activeTab, isNew: true });
   };
 
   const handleUpdateSubscriberInfo = async (formData) => {
     try {
       await updateSubscriberInfo(formData).unwrap();
       // Refresh dashboard data after update
-      // TODO: Add refetch functionality
+      refetch();
     } catch (err) {
       throw new Error(err.data?.error || 'Failed to update subscriber information');
     }
   };
 
   const handleRenewSubscription = async (subscriptionType) => {
+    if (hasActiveSubscriptionForType(subscriptionType, dashboardData?.subscriptions)) return;
     setRenewalModal({ isOpen: true, subscriptionType });
   };
 
@@ -923,6 +892,11 @@ export default function SubscriberDashboard() {
   const { subscriptions = [], stats = {}, subscriber } = dashboardData || {};
   const { activeSubscriptions = 0, pendingSubscriptions = 0 } = stats;
   const hasExistingData = subscriber && subscriber.sub_name;
+  const isSubscriberInfoComplete = Boolean(
+    subscriber?.sub_name?.trim() &&
+    subscriber?.sub_email?.trim() &&
+    subscriber?.publication_type?.trim()
+  );
   const typeLabelById = SUBSCRIPTION_TYPES.reduce((acc, type) => {
     acc[type.id] = type.label;
     return acc;
@@ -952,6 +926,13 @@ export default function SubscriberDashboard() {
   const filteredSubscriptions = subscriptions
     .filter(sub => sub.sub_type === activeTab || sub.publication_type === activeTab)
     .sort((a, b) => new Date(b.sub_date) - new Date(a.sub_date)); // Most recent first
+
+  const hasActiveSubscriptionForTab = filteredSubscriptions.some(
+    (sub) => String(sub.status || '').toLowerCase() === 'active'
+  );
+  const subscriptionActionsDisabledReason = hasActiveSubscriptionForTab
+    ? 'You already have an active subscription for this publication type. Renew or start a new subscription when it is no longer active.'
+    : undefined;
 
   return (
     <DashboardContainer>
@@ -1024,7 +1005,12 @@ export default function SubscriberDashboard() {
         <SubscriptionsSection>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '20px' }}>
             <SectionTitle style={{ marginBottom: 0 }}>Your Subscriptions</SectionTitle>
-            <ActionButton className="primary" onClick={handleNewSubscription}>
+            <ActionButton
+              className="primary"
+              onClick={handleNewSubscription}
+              disabled={hasActiveSubscriptionForTab}
+              title={subscriptionActionsDisabledReason}
+            >
               <FaPlus style={{ marginRight: '8px' }} />
               New Subscription
             </ActionButton>
@@ -1051,7 +1037,8 @@ export default function SubscriberDashboard() {
               <TabTitle>{subscriptionTypes.find(t => t.id === activeTab)?.label} Subscriptions</TabTitle>
               <RenewButton 
                 onClick={() => handleRenewSubscription(activeTab)}
-                disabled={filteredSubscriptions.length === 0}
+                disabled={filteredSubscriptions.length === 0 || hasActiveSubscriptionForTab}
+                title={subscriptionActionsDisabledReason}
               >
                 <FaPlus />
                 Renew {activeTab}
@@ -1479,32 +1466,34 @@ export default function SubscriberDashboard() {
        </LeftPanel>
 
        <RightPanel>
-         <SubscriberInfoForm
-           subscriberData={subscriber}
-           onSubmit={handleUpdateSubscriberInfo}
-           isUpdating={hasExistingData}
-                 />
+        <div id="subscriber-info-form">
+          <SubscriberInfoForm
+            subscriberData={subscriber}
+            onSubmit={handleUpdateSubscriberInfo}
+            isUpdating={hasExistingData}
+          />
+        </div>
       </RightPanel>
 
-      {newSubscriptionTypeModalOpen && (
-        <NewSubModalOverlay onClick={() => setNewSubscriptionTypeModalOpen(false)}>
+      {showSubscriberInfoPrompt && (
+        <NewSubModalOverlay onClick={() => setShowSubscriberInfoPrompt(false)}>
           <NewSubModalContent onClick={(e) => e.stopPropagation()}>
-            <NewSubModalTitle>New Subscription</NewSubModalTitle>
-            <NewSubModalSubtitle>Choose the type of subscription you want to start</NewSubModalSubtitle>
-            <NewSubTypeGrid>
-              {subscriptionTypes.map((type) => (
-                <NewSubTypeCard
-                  key={type.id}
-                  type="button"
-                  onClick={() => handleChooseNewSubscriptionType(type.id)}
-                >
-                  <NewSubTypeIcon>{type.icon}</NewSubTypeIcon>
-                  <NewSubTypeLabel>{type.label}</NewSubTypeLabel>
-                  <NewSubTypeDesc>{type.description}</NewSubTypeDesc>
-                </NewSubTypeCard>
-              ))}
-            </NewSubTypeGrid>
-            <NewSubCloseBtn type="button" onClick={() => setNewSubscriptionTypeModalOpen(false)}>
+            <NewSubModalTitle>Complete Subscriber Information First</NewSubModalTitle>
+            <NewSubModalSubtitle>
+              Please complete the required fields in the Update Subscriber Information form before starting a new subscription.
+            </NewSubModalSubtitle>
+            <ActionButton
+              className="primary"
+              type="button"
+              onClick={() => {
+                setShowSubscriberInfoPrompt(false);
+                document.getElementById('subscriber-info-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }}
+              style={{ width: '100%', marginRight: 0 }}
+            >
+              Go to Update Subscriber Information
+            </ActionButton>
+            <NewSubCloseBtn type="button" onClick={() => setShowSubscriberInfoPrompt(false)}>
               Cancel
             </NewSubCloseBtn>
           </NewSubModalContent>
