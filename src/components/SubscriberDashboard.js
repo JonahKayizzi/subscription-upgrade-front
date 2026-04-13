@@ -740,7 +740,6 @@ export default function SubscriberDashboard() {
   const [renewalModal, setRenewalModal] = useState({ isOpen: false, subscriptionType: null, isNew: false });
   const [newSubscriptionTypeModalOpen, setNewSubscriptionTypeModalOpen] = useState(false);
   const [receiptFile, setReceiptFile] = useState(null);
-  const [receiptNumber, setReceiptNumber] = useState('');
   const [isSubmittingReceipt, setIsSubmittingReceipt] = useState(false);
   const [requestInvoice] = useRequestInvoiceMutation();
   const [markInvoiceNotRequired] = useMarkInvoiceNotRequiredMutation();
@@ -790,20 +789,18 @@ export default function SubscriberDashboard() {
   };
 
   const handleSubmitReceipt = async (subscriptionId) => {
-    if (!receiptFile || !receiptNumber) return;
+    if (!receiptFile) return;
     
     try {
       setIsSubmittingReceipt(true);
       
       await uploadReceipt({
         subscriptionId,
-        receiptFile: receiptFile,
-        receiptNumber: receiptNumber
+        receiptFile: receiptFile
       }).unwrap();
       
       // Clear form and refresh data
       setReceiptFile(null);
-      setReceiptNumber('');
       
       // Refresh the data to show updated status
       refetch();
@@ -1181,26 +1178,6 @@ export default function SubscriberDashboard() {
                       </div>
                       <FileUploadSection>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <label style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
-                              Receipt Number:
-                            </label>
-                            <input
-                              type="text"
-                              placeholder="Enter receipt number"
-                              value={receiptNumber || ''}
-                              onChange={(e) => setReceiptNumber(e.target.value)}
-                              style={{
-                                padding: '4px 8px',
-                                border: '1px solid var(--color-border)',
-                                borderRadius: '4px',
-                                fontSize: '0.75rem',
-                                background: 'var(--color-background)',
-                                color: 'var(--color-text)',
-                                minWidth: '120px'
-                              }}
-                            />
-                          </div>
                           <UploadLabel>
                             <FaUpload />
                             Upload Receipt File
@@ -1218,7 +1195,7 @@ export default function SubscriberDashboard() {
                           <ActionButton 
                             className="primary" 
                             onClick={() => handleSubmitReceipt(subscription.id)}
-                            disabled={!receiptFile || !receiptNumber || isSubmittingReceipt}
+                            disabled={!receiptFile || isSubmittingReceipt}
                             style={{ fontSize: '0.75rem', padding: '4px 8px', alignSelf: 'flex-start' }}
                           >
                             {isSubmittingReceipt ? 'Submitting...' : 'Submit Receipt'}
