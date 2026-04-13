@@ -492,12 +492,8 @@ const ExpiredBadge = styled.span`
 
 const QuickAccessGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 20px;
-
-  @media (max-width: 900px) {
-    grid-template-columns: 1fr 1fr;
-  }
 
   @media (max-width: 600px) {
     grid-template-columns: 1fr;
@@ -613,8 +609,28 @@ const NewSubCloseBtn = styled.button`
   }
 `;
 
-function MyInvoicesSection() {
-  const { data, isLoading } = useGetMyInvoicesQuery();
+const InvoicesModalClose = styled.button`
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 10px;
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font-size: 1.25rem;
+  transition: color 0.2s, background 0.2s;
+  &:hover {
+    color: var(--color-text);
+    background: var(--color-border);
+  }
+`;
+
+function MyInvoicesModal({ isOpen, onClose }) {
+  const { data, isLoading } = useGetMyInvoicesQuery(undefined, { skip: !isOpen });
   const [triggerSubscriptionDownload, { isLoading: isDownloadingSub }] = useLazyGetInvoiceDownloadQuery();
   const [triggerChartOrderDownload, { isLoading: isDownloadingCo }] = useLazyGetChartOrderInvoiceDownloadQuery();
   const invoices = data?.invoices || [];
@@ -637,55 +653,89 @@ function MyInvoicesSection() {
     }
   };
 
+  if (!isOpen) return null;
+
   return (
-    <div style={{ marginBottom: '0' }} id="my-invoices">
-      <SectionTitle style={{ marginBottom: '16px' }}>
-        <FaFileInvoice style={{ marginRight: '8px', verticalAlign: 'middle' }} />
-        My Invoices
-      </SectionTitle>
-      <Card style={{ padding: '20px', borderRadius: '12px' }}>
-        {isLoading ? (
-          <div style={{ padding: '16px', color: 'var(--color-text-muted)' }}>Loading...</div>
-        ) : invoices.length === 0 ? (
-          <div style={{ padding: '24px', textAlign: 'center', color: 'var(--color-text-muted)' }}>
-            <FaFileInvoice style={{ fontSize: '2rem', marginBottom: '12px', opacity: 0.6 }} />
-            <p style={{ margin: 0, fontSize: '1rem' }}>No invoices yet</p>
-            <p style={{ margin: '8px 0 0', fontSize: '0.9rem' }}>When you request an invoice for a subscription renewal or chart order, it will appear here for download once ready.</p>
-          </div>
-        ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
-                  <th style={{ textAlign: 'left', padding: '10px 12px', color: 'var(--color-accent)' }}>Description</th>
-                  <th style={{ textAlign: 'left', padding: '10px 12px', color: 'var(--color-accent)' }}>Status</th>
-                  <th style={{ textAlign: 'left', padding: '10px 12px', color: 'var(--color-accent)' }}>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {invoices.map((inv) => (
-                  <tr key={`${inv.requestType || 'subscription'}-${inv.id}`} style={{ borderBottom: '1px solid var(--color-border)' }}>
-                    <td style={{ padding: '10px 12px' }}>{inv.requestType === 'chart_order' ? (inv.sub_type || 'Chart order') : `Renewal ${inv.sub_type || '2025'}`}</td>
-                    <td style={{ padding: '10px 12px' }}>
-                      {inv.invoice_status === 'uploaded' ? 'Uploaded' : 'Pending'}
-                    </td>
-                    <td style={{ padding: '10px 12px' }}>
-                      {inv.invoice_status === 'uploaded' ? (
-                        <ActionButton className="primary" onClick={() => handleDownload(inv)} disabled={isDownloading} style={{ fontSize: '0.8rem', padding: '6px 12px' }}>
-                          <FaDownload style={{ marginRight: '6px' }} /> Download
-                        </ActionButton>
-                      ) : (
-                        <span style={{ fontStyle: 'italic', color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>Invoice is being prepared</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </Card>
-    </div>
+    <NewSubModalOverlay onClick={onClose}>
+      <NewSubModalContent
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          maxWidth: '720px',
+          width: '92%',
+          maxHeight: '88vh',
+          display: 'flex',
+          flexDirection: 'column',
+          padding: '24px',
+          overflow: 'hidden'
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '16px', flexShrink: 0 }}>
+          <NewSubModalTitle style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.35rem' }}>
+            <FaFileInvoice style={{ opacity: 0.9 }} />
+            My Invoices
+          </NewSubModalTitle>
+          <InvoicesModalClose type="button" onClick={onClose} aria-label="Close">
+            <FaTimes />
+          </InvoicesModalClose>
+        </div>
+        <div style={{ overflowY: 'auto', flex: 1, minHeight: 0 }}>
+          <Card style={{ padding: '20px', borderRadius: '12px', margin: 0 }}>
+            {isLoading ? (
+              <div style={{ padding: '16px', color: 'var(--color-text-muted)' }}>Loading...</div>
+            ) : invoices.length === 0 ? (
+              <div style={{ padding: '24px', textAlign: 'center', color: 'var(--color-text-muted)' }}>
+                <FaFileInvoice style={{ fontSize: '2rem', marginBottom: '12px', opacity: 0.6 }} />
+                <p style={{ margin: 0, fontSize: '1rem' }}>No invoices yet</p>
+                <p style={{ margin: '8px 0 0', fontSize: '0.9rem' }}>
+                  When you request an invoice for a subscription renewal or chart order, it will appear here for download once ready.
+                </p>
+              </div>
+            ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
+                      <th style={{ textAlign: 'left', padding: '10px 12px', color: 'var(--color-accent)' }}>Description</th>
+                      <th style={{ textAlign: 'left', padding: '10px 12px', color: 'var(--color-accent)' }}>Status</th>
+                      <th style={{ textAlign: 'left', padding: '10px 12px', color: 'var(--color-accent)' }}>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {invoices.map((inv) => (
+                      <tr key={`${inv.requestType || 'subscription'}-${inv.id}`} style={{ borderBottom: '1px solid var(--color-border)' }}>
+                        <td style={{ padding: '10px 12px' }}>
+                          {inv.requestType === 'chart_order' ? (inv.sub_type || 'Chart order') : `Renewal ${inv.sub_type || '2025'}`}
+                        </td>
+                        <td style={{ padding: '10px 12px' }}>
+                          {inv.invoice_status === 'uploaded' ? 'Uploaded' : 'Pending'}
+                        </td>
+                        <td style={{ padding: '10px 12px' }}>
+                          {inv.invoice_status === 'uploaded' ? (
+                            <ActionButton
+                              className="primary"
+                              onClick={() => handleDownload(inv)}
+                              disabled={isDownloading}
+                              style={{ fontSize: '0.8rem', padding: '6px 12px' }}
+                            >
+                              <FaDownload style={{ marginRight: '6px' }} /> Download
+                            </ActionButton>
+                          ) : (
+                            <span style={{ fontStyle: 'italic', color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>Invoice is being prepared</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </Card>
+        </div>
+        <NewSubCloseBtn type="button" onClick={onClose} style={{ marginTop: '16px' }}>
+          Close
+        </NewSubCloseBtn>
+      </NewSubModalContent>
+    </NewSubModalOverlay>
   );
 }
 
@@ -697,6 +747,7 @@ export default function SubscriberDashboard() {
   const [expandedSubscriptions, setExpandedSubscriptions] = useState(new Set());
   const [renewalModal, setRenewalModal] = useState({ isOpen: false, subscriptionType: null, isNew: false });
   const [showSubscriberInfoPrompt, setShowSubscriberInfoPrompt] = useState(false);
+  const [myInvoicesModalOpen, setMyInvoicesModalOpen] = useState(false);
   const [receiptFile, setReceiptFile] = useState(null);
   const [isSubmittingReceipt, setIsSubmittingReceipt] = useState(false);
   const [requestInvoice] = useRequestInvoiceMutation();
@@ -987,20 +1038,7 @@ export default function SubscriberDashboard() {
               <QuickAccessBadge>No orders yet →</QuickAccessBadge>
             )}
           </QuickAccessCard>
-
-          <QuickAccessCard as="div" onClick={() => document.getElementById('my-invoices')?.scrollIntoView({ behavior: 'smooth' })} style={{ cursor: 'pointer' }}>
-            <QuickAccessIcon>
-              <FaFileInvoice />
-            </QuickAccessIcon>
-            <QuickAccessTitle>My Invoices</QuickAccessTitle>
-            <QuickAccessDescription>
-              Download invoices for your subscription renewals and chart orders once they are ready.
-            </QuickAccessDescription>
-            <QuickAccessBadge>View & download →</QuickAccessBadge>
-          </QuickAccessCard>
         </QuickAccessGrid>
-
-        <MyInvoicesSection />
 
         <SubscriptionsSection>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '20px' }}>
@@ -1473,6 +1511,28 @@ export default function SubscriberDashboard() {
             isUpdating={hasExistingData}
           />
         </div>
+        <QuickAccessCard
+          as="div"
+          role="button"
+          tabIndex={0}
+          onClick={() => setMyInvoicesModalOpen(true)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              setMyInvoicesModalOpen(true);
+            }
+          }}
+          style={{ cursor: 'pointer', width: '100%', minHeight: 'auto' }}
+        >
+          <QuickAccessIcon>
+            <FaFileInvoice />
+          </QuickAccessIcon>
+          <QuickAccessTitle>My Invoices</QuickAccessTitle>
+          <QuickAccessDescription>
+            Download invoices for your subscription renewals and chart orders once they are ready.
+          </QuickAccessDescription>
+          <QuickAccessBadge>View & download →</QuickAccessBadge>
+        </QuickAccessCard>
       </RightPanel>
 
       {showSubscriberInfoPrompt && (
@@ -1499,6 +1559,8 @@ export default function SubscriberDashboard() {
           </NewSubModalContent>
         </NewSubModalOverlay>
       )}
+
+      <MyInvoicesModal isOpen={myInvoicesModalOpen} onClose={() => setMyInvoicesModalOpen(false)} />
 
       <RenewalModal
         isOpen={renewalModal.isOpen}
