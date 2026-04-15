@@ -939,17 +939,13 @@ export default function SubscriberDashboard() {
     if (priorityA !== priorityB) return priorityA - priorityB;
     return new Date(b.sub_date || 0) - new Date(a.sub_date || 0);
   })[0];
-  const summaryStatus = summarySubscription
-    ? (summarySubscription.status || (summarySubscription.sub_status === 2 ? 'pending' : 'inactive'))
-    : 'not started';
-  const summaryStatusLabel = summaryStatus.charAt(0).toUpperCase() + summaryStatus.slice(1);
   const summaryType = summarySubscription
     ? (summarySubscription.sub_type || summarySubscription.publication_type || 'Subscription')
     : 'No subscription';
   const summaryTypeLabel = typeLabelById[summaryType] || summaryType;
   const summaryExpiry = summarySubscription?.sub_exp_date
     ? new Date(summarySubscription.sub_exp_date).toLocaleDateString()
-    : (summaryStatus === 'pending' ? 'To be confirmed' : 'Not available');
+    : 'Not available';
   
   // Filter subscriptions by active tab and sort by most recent first
   const filteredSubscriptions = subscriptions
@@ -965,15 +961,15 @@ export default function SubscriberDashboard() {
           <DashboardStatsRow>
             <DashboardStat>
               <DashboardStatValue>{activeSubscriptions}</DashboardStatValue>
-              <DashboardStatLabel>Active</DashboardStatLabel>
+              <DashboardStatLabel>Active Subscriptions</DashboardStatLabel>
             </DashboardStat>
             <DashboardStat>
               <DashboardStatValue>{pendingSubscriptions}</DashboardStatValue>
-              <DashboardStatLabel>Pending</DashboardStatLabel>
+              <DashboardStatLabel>Pending Subcriptions</DashboardStatLabel>
             </DashboardStat>
             <DashboardStat>
-              <DashboardStatValue>{summaryStatusLabel}</DashboardStatValue>
-              <DashboardStatLabel>{summaryTypeLabel} • Expiry: {summaryExpiry}</DashboardStatLabel>
+              <DashboardStatValue>{summaryExpiry}</DashboardStatValue>
+              <DashboardStatLabel>Latest Subscription Expiry ({summaryTypeLabel})</DashboardStatLabel>
             </DashboardStat>
           </DashboardStatsRow>
         </WelcomeSection>
