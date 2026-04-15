@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useGetSubscribersQuery, useSearchSubscribersQuery, useDeleteSubscriberMutation, useGetSubscriberQuery, useUpdateSubscriberMutation, useGetAnnualSubscriptionReportQuery, useGetNotificationsQuery, useGetPaperSubscriptionsForMailingLabelsQuery } from '../api/apiSlice';
 import { printMailingLabels, downloadMailingLabels } from '../utils/mailingLabels';
 import { printDispatchList } from '../utils/dispatchList';
@@ -384,11 +384,50 @@ const HistoryTable = styled.table`
   }
 `;
 
+const DeleteConfirmContent = styled.div`
+  min-width: 380px;
+  max-width: 520px;
+  background: var(--color-background-card);
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+`;
+
+const DeleteConfirmTitle = styled.h3`
+  margin: 0;
+  font-size: 1.2rem;
+  color: var(--color-text);
+`;
+
+const DeleteConfirmText = styled.p`
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.95rem;
+  line-height: 1.5;
+`;
+
+const DeleteConfirmActions = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+`;
+
+const FloatingNotificationWrap = styled.div`
+  position: fixed;
+  top: 84px;
+  right: 20px;
+  z-index: 1200;
+  width: min(420px, calc(100vw - 32px));
+`;
+
 export default function SubscribersTable() {
   const navigate = useNavigate();
   const globalSearchQuery = useSelector(state => state.search.query);
-  const { data: allData, isLoading: isLoadingAll, error: allError } = useGetSubscribersQuery(undefined, { skip: globalSearchQuery !== '' });
-  const { data: searchData, isLoading: isLoadingSearch, error: searchError } = useSearchSubscribersQuery(globalSearchQuery, {
+  const { data: allData, isLoading: isLoadingAll, error: allError, refetch: refetchAllSubscribers } = useGetSubscribersQuery(undefined, { skip: globalSearchQuery !== '' });
+  const { data: searchData, isLoading: isLoadingSearch, error: searchError, refetch: refetchSearchSubscribers } = useSearchSubscribersQuery(globalSearchQuery, {
     skip: globalSearchQuery === ''
   });
   const [deleteSubscriber] = useDeleteSubscriberMutation();
@@ -406,6 +445,11 @@ export default function SubscribersTable() {
   const [mailingLabelsStatus, setMailingLabelsStatus] = useState(null);
   const [isLoadingDispatchList, setIsLoadingDispatchList] = useState(false);
   const [dispatchListStatus, setDispatchListStatus] = useState(null);
+  const [saveSubscriberStatus, setSaveSubscriberStatus] = useState(null);
+  const [deleteSubscriberStatus, setDeleteSubscriberStatus] = useState(null);
+  const [deletedSubscriberIds, setDeletedSubscriberIds] = useState(new Set());
+  const [deleteConfirmModalOpen, setDeleteConfirmModalOpen] = useState(false);
+  const [pendingDeleteSubscriber, setPendingDeleteSubscriber] = useState(null);
   const { data: subscriberDetails, isLoading: isLoadingDetails, refetch } = useGetSubscriberQuery(selected?.sub_id, { skip: !selected });
   const { data: annualReportData, isLoading: isReportLoading } = useGetAnnualSubscriptionReportQuery();
   const { data: notificationsData, isLoading: isLoadingNotifications } = useGetNotificationsQuery();
@@ -430,32 +474,84 @@ export default function SubscribersTable() {
     }
   }, [subscriberDetails]);
 
-  if (isLoadingAll && globalSearchQuery === '') return <Card>Loading subscribers...</Card>;
-  if (isLoadingSearch && globalSearchQuery !== '') return <Card>Searching subscribers...</Card>;
-  if (allError || searchError) return <Card>Error loading subscribers.</Card>;
+  React.useEffect(() => {
+    if (!saveSubscriberStatus) return undefined;
+    const timer = setTimeout(() => {
+      setSaveSubscriberStatus(null);
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [saveSubscriberStatus]);
+
+  React.useEffect(() => {
+    if (!deleteSubscriberStatus) return undefined;
+    const timer = setTimeout(() => {
+      setDeleteSubscriberStatus(null);
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [deleteSubscriberStatus]);
+
+  React.useEffect(() => {
+    if (!(saveSubscriberStatus?.type === 'success' && modalOpen)) return undefined;
+    const navigateTimer = setTimeout(() => {
+      setModalOpen(false);
+      setSelected(null);
+    }, 2500);
+    return () => clearTimeout(navigateTimer);
+  }, [saveSubscriberStatus, modalOpen]);
 
   const data = globalSearchQuery !== '' ? searchData : allData;
   const subscribers = data?.subscribers || [];
   const lags = data?.lags || [];
   const revenue = data?.revenue || { total: 0, by_type: {}, monthly: [] };
 
-  const sortedSubscribers = [...subscribers].sort((a, b) => 
+  // Keep all active listings free of deleted / soft-deleted subscribers
+  const isSubscriberActive = (subscriber) => {
+    if (!subscriber) return false;
+    const deleted = (
+      subscriber.deleted_at != null ||
+      subscriber.deletedAt != null ||
+      subscriber.sub_deleted === 1 ||
+      subscriber.sub_deleted === true ||
+      subscriber.is_deleted === 1 ||
+      subscriber.is_deleted === true ||
+      subscriber.isDeleted === 1 ||
+      subscriber.isDeleted === true ||
+      subscriber.removed === 1 ||
+      subscriber.removed === true
+    );
+    return !deleted;
+  };
+
+  const visibleSubscribers = useMemo(
+    () =>
+      subscribers.filter(
+        (subscriber) =>
+          isSubscriberActive(subscriber) && !deletedSubscriberIds.has(subscriber.sub_id)
+      ),
+    [subscribers, deletedSubscriberIds]
+  );
+
+  const sortedSubscribers = [...visibleSubscribers].sort((a, b) =>
     a.sub_name.localeCompare(b.sub_name)
   );
 
+  if (isLoadingAll && globalSearchQuery === '') return <Card>Loading subscribers...</Card>;
+  if (isLoadingSearch && globalSearchQuery !== '') return <Card>Searching subscribers...</Card>;
+  if (allError || searchError) return <Card>Error loading subscribers.</Card>;
+
   const currentYear = new Date().getFullYear();
   const stats = {
-    total: subscribers.length,
-    active: subscribers.filter(sub => 
+    total: visibleSubscribers.length,
+    active: visibleSubscribers.filter(sub => 
       Object.values(sub.subscription_status).some(status => status === 'active')
     ).length,
-    expired: subscribers.filter(sub => 
+    expired: visibleSubscribers.filter(sub => 
       Object.values(sub.subscription_status).some(status => status === 'expired')
     ).length,
-    inactive: subscribers.filter(sub => 
+    inactive: visibleSubscribers.filter(sub => 
       Object.values(sub.subscription_status).every(status => status === 'inactive' || status === 'none')
     ).length,
-    newThisYear: subscribers.filter(sub => 
+    newThisYear: visibleSubscribers.filter(sub => 
       new Date(sub.sub_add_date).getFullYear() === currentYear
     ).length,
     revenue: {
@@ -488,7 +584,11 @@ export default function SubscribersTable() {
     ]
   };
 
-  const top5Dormant = [...lags].sort((a, b) => b.lag_days - a.lag_days).slice(0, 5);
+  const activeSubscriberIds = new Set(visibleSubscribers.map(sub => sub.sub_id));
+  const top5Dormant = [...lags]
+    .filter((sub) => activeSubscriberIds.has(sub.sub_id))
+    .sort((a, b) => b.lag_days - a.lag_days)
+    .slice(0, 5);
 
   const chartLags = lags.filter(l => l.lag_days <= 365);
   const lagsBarData = {
@@ -543,11 +643,28 @@ export default function SubscribersTable() {
   const handleSaveSubscriber = async () => {
     if (editedSubscriber) {
       try {
-        await updateSubscriber({ id: editedSubscriber.sub_id, ...editedSubscriber }).unwrap();
+        const updatedSubscriber = await updateSubscriber({ id: editedSubscriber.sub_id, ...editedSubscriber }).unwrap();
+        setSaveSubscriberStatus({
+          type: 'success',
+          message: 'Subscriber details updated successfully.'
+        });
+        if (updatedSubscriber) {
+          setEditedSubscriber(updatedSubscriber);
+          setSelected(updatedSubscriber);
+        }
         setIsEditingSubscriber(false);
         refetch();
+        if (globalSearchQuery !== '') {
+          refetchSearchSubscribers();
+        } else {
+          refetchAllSubscribers();
+        }
       } catch (err) {
         console.error('Failed to update subscriber:', err);
+        setSaveSubscriberStatus({
+          type: 'error',
+          message: 'Failed to update subscriber details. Please try again.'
+        });
       }
     }
   };
@@ -681,13 +798,33 @@ export default function SubscribersTable() {
     }));
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this subscriber?')) {
-      try {
-        await deleteSubscriber(id).unwrap();
-      } catch (err) {
-        console.error('Failed to delete subscriber:', err);
-      }
+  const handleDelete = (subscriber) => {
+    setPendingDeleteSubscriber(subscriber);
+    setDeleteConfirmModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!pendingDeleteSubscriber?.sub_id) return;
+    try {
+      await deleteSubscriber(pendingDeleteSubscriber.sub_id).unwrap();
+      setDeletedSubscriberIds(prev => {
+        const next = new Set(prev);
+        next.add(pendingDeleteSubscriber.sub_id);
+        return next;
+      });
+      setDeleteSubscriberStatus({
+        type: 'success',
+        message: 'Subscriber deleted successfully.'
+      });
+    } catch (err) {
+      console.error('Failed to delete subscriber:', err);
+      setDeleteSubscriberStatus({
+        type: 'error',
+        message: 'Failed to delete subscriber. Please try again.'
+      });
+    } finally {
+      setDeleteConfirmModalOpen(false);
+      setPendingDeleteSubscriber(null);
     }
   };
 
@@ -753,13 +890,13 @@ export default function SubscribersTable() {
                     </td>
                     <td style={{ padding: 12, textAlign: 'left', display: 'flex', gap: 8 }}>
                       <Button style={{ width: '50%', minWidth: 0, padding: '4px 12px', fontSize: 14 }} onClick={() => handleView(sub)}>View</Button>
-                      <Button style={{ width: '50%', minWidth: 0, padding: '4px 12px', fontSize: 14, background: 'var(--color-error)', color: '#fff' }} onClick={() => handleDelete(sub.sub_id)}>Delete</Button>
+                      <Button style={{ width: '50%', minWidth: 0, padding: '4px 12px', fontSize: 14, background: 'var(--color-error)', color: '#fff' }} onClick={() => handleDelete(sub)}>Delete</Button>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            {subscribers.length === 0 && (
+            {sortedSubscribers.length === 0 && (
               <div style={{ textAlign: 'center', padding: '20px 0', color: 'var(--color-text-muted)' }}>
                 No subscribers found matching your search.
               </div>
@@ -893,7 +1030,7 @@ export default function SubscribersTable() {
                 <span style={{ color: 'var(--color-text)' }}>{sub.sub_name} ({sub.lag_days} days)</span>
                 <Button 
                   style={{ width: '50%', minWidth: 0, padding: '4px 10px', fontSize: 13, background: 'var(--color-error)', color: '#fff' }}
-                  onClick={() => handleDelete(sub.sub_id)}
+                  onClick={() => handleDelete(sub)}
                 >
                   Delete
                 </Button>
@@ -963,13 +1100,18 @@ export default function SubscribersTable() {
                   </FormGroup>
                 </FormGrid>
                 <SaveButtonContainer>
-                  <Button 
+                  <Button
                     onClick={handleSaveSubscriber}
                     disabled={isUpdatingSubscriber}
                   >
                     {isUpdatingSubscriber ? 'Saving...' : 'Update Subscriber Details'}
                   </Button>
                 </SaveButtonContainer>
+                {saveSubscriberStatus && (
+                  <StatusMessage success={saveSubscriberStatus.type === 'success'}>
+                    {saveSubscriberStatus.message}
+                  </StatusMessage>
+                )}
               </LeftPane>
               <RightPane>
                 {(() => {
@@ -1212,6 +1354,41 @@ export default function SubscribersTable() {
         )}
       </Modal>
 
+      <Modal
+        isOpen={deleteConfirmModalOpen}
+        onClose={() => {
+          setDeleteConfirmModalOpen(false);
+          setPendingDeleteSubscriber(null);
+        }}
+      >
+        <DeleteConfirmContent>
+          <DeleteConfirmTitle>Delete Subscriber</DeleteConfirmTitle>
+          <DeleteConfirmText>
+            Are you sure you want to delete{' '}
+            <strong>{pendingDeleteSubscriber?.sub_name || 'this subscriber'}</strong>? This action cannot be undone.
+          </DeleteConfirmText>
+          <DeleteConfirmActions>
+            <Button
+              type="button"
+              style={{ background: 'transparent', border: '1px solid var(--color-border)', color: 'var(--color-text)' }}
+              onClick={() => {
+                setDeleteConfirmModalOpen(false);
+                setPendingDeleteSubscriber(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              style={{ background: 'var(--color-error)', color: '#fff' }}
+              onClick={handleConfirmDelete}
+            >
+              Delete
+            </Button>
+          </DeleteConfirmActions>
+        </DeleteConfirmContent>
+      </Modal>
+
       {/* Admin Subscription Request Modal */}
       <AdminSubscriptionRequestModal
         isOpen={adminSubscriptionModalOpen}
@@ -1222,6 +1399,13 @@ export default function SubscribersTable() {
           if (refetch) refetch();
         }}
       />
+      {deleteSubscriberStatus && (
+        <FloatingNotificationWrap>
+          <StatusMessage success={deleteSubscriberStatus.type === 'success'}>
+            {deleteSubscriberStatus.message}
+          </StatusMessage>
+        </FloatingNotificationWrap>
+      )}
     </Container>
   );
 } 
