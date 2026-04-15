@@ -3,11 +3,88 @@ import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import Card from './ui/Card';
 import styled from 'styled-components';
-import { FaFileAlt, FaUpload, FaDownload, FaCheckCircle, FaClock, FaExclamationTriangle, FaPlus, FaChevronDown, FaChevronUp, FaEye, FaTimes, FaMap, FaShoppingBag, FaFileInvoice } from 'react-icons/fa';
-import { useGetSubscriberDashboardQuery, useRequestInvoiceMutation, useMarkInvoiceNotRequiredMutation, useUploadReceiptMutation, useUpdateSubscriberInfoMutation, useCreateRenewalSubscriptionMutation, useGetChartOrdersQuery, useGetMyInvoicesQuery, useLazyGetInvoiceDownloadQuery, useLazyGetChartOrderInvoiceDownloadQuery } from '../api/apiSlice';
+import { FaFileAlt, FaUpload, FaDownload, FaCheckCircle, FaClock, FaExclamationTriangle, FaPlus, FaChevronDown, FaChevronUp, FaEye, FaTimes, FaMap, FaFileInvoice, FaBook, FaBell, FaDatabase, FaClipboardList, FaCode, FaTh } from 'react-icons/fa';
+import { useGetSubscriberDashboardQuery, useRequestInvoiceMutation, useMarkInvoiceNotRequiredMutation, useUploadReceiptMutation, useUpdateSubscriberInfoMutation, useCreateRenewalSubscriptionMutation, useGetMyInvoicesQuery, useLazyGetInvoiceDownloadQuery, useLazyGetChartOrderInvoiceDownloadQuery } from '../api/apiSlice';
 import SubscriberInfoForm from './SubscriberInfoForm';
 import RenewalModal from './RenewalModal';
 import { SUBSCRIPTION_TYPES } from '../config/subscriptionTypes';
+
+const AIS_PORTAL_BASE =
+  (typeof process !== 'undefined' && process.env.REACT_APP_AIS_PORTAL_URL) || 'https://aim.caa.co.ug';
+
+/** AIS Headquarters products shown on the subscriber dashboard (same card pattern as legacy quick access). */
+const AIS_HEADQUARTERS_PRODUCTS = [
+  {
+    id: 'aip',
+    title: 'AIP',
+    description:
+      'Aeronautical Information Publication: integrated operational and regulatory aeronautical information.',
+    href: '#subscriber-subscriptions',
+    linkType: 'hash',
+    cta: 'Manage subscriptions →',
+    Icon: FaBook,
+  },
+  {
+    id: 'aic',
+    title: 'AIC',
+    description:
+      'Aeronautical Information Circulars: supplementary notices and administrative information for aviation users.',
+    href: `${AIS_PORTAL_BASE.replace(/\/$/, '')}/`,
+    linkType: 'external',
+    cta: 'Visit AIS portal →',
+    Icon: FaFileAlt,
+  },
+  {
+    id: 'notam',
+    title: 'NOTAM',
+    description:
+      'Notice to Air Missions: timely safety and operational notices affecting flight operations.',
+    href: `${AIS_PORTAL_BASE.replace(/\/$/, '')}/`,
+    linkType: 'external',
+    cta: 'Visit AIS portal →',
+    Icon: FaBell,
+  },
+  {
+    id: 'digital-data',
+    title: 'Digital Data sets',
+    description:
+      'Structured digital aeronautical data for planning, briefing, and system integration.',
+    href: `${AIS_PORTAL_BASE.replace(/\/$/, '')}/`,
+    linkType: 'external',
+    cta: 'Visit AIS portal →',
+    Icon: FaDatabase,
+  },
+  {
+    id: 'aeronautical-charts',
+    title: 'Aeronautical Charts',
+    description:
+      'Browse, search, and order aeronautical charts in multiple sizes through the catalog.',
+    href: '/charts',
+    linkType: 'internal',
+    cta: 'View catalog →',
+    Icon: FaMap,
+  },
+  {
+    id: 'pib',
+    title: 'PIB',
+    description:
+      'Pre-flight Information Bulletin: tailored briefing packages for your route and timeframe.',
+    href: `${AIS_PORTAL_BASE.replace(/\/$/, '')}/`,
+    linkType: 'external',
+    cta: 'Visit AIS portal →',
+    Icon: FaClipboardList,
+  },
+  {
+    id: 'aixm',
+    title: 'AIXM-based data',
+    description:
+      'Aeronautical Information Exchange Model (AIXM) data for systems and GIS workflows.',
+    href: `${AIS_PORTAL_BASE.replace(/\/$/, '')}/`,
+    linkType: 'external',
+    cta: 'Visit AIS portal →',
+    Icon: FaCode,
+  },
+];
 
 const DashboardContainer = styled.div`
   padding: 24px 32px 48px;
@@ -492,7 +569,7 @@ const ExpiredBadge = styled.span`
 
 const QuickAccessGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 20px;
 
   @media (max-width: 600px) {
@@ -556,6 +633,52 @@ const QuickAccessBadge = styled.span`
   color: #10b981;
   margin-top: auto;
   align-self: flex-start;
+`;
+
+/** Opens the AIS product catalogue modal; matches QuickAccessCard visuals. */
+const CatalogueTrigger = styled.button`
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 22px 20px;
+  text-align: left;
+  color: var(--color-text);
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 160px;
+  width: 100%;
+  cursor: pointer;
+  font: inherit;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+    border-color: var(--color-accent2);
+  }
+`;
+
+/** Same visual style as QuickAccessCard for <a> (external / in-page hash) links. */
+const QuickAccessCardAnchor = styled.a`
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 22px 20px;
+  text-decoration: none;
+  color: var(--color-text);
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 160px;
+  cursor: pointer;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+    border-color: var(--color-accent2);
+  }
 `;
 
 const NewSubModalOverlay = styled.div`
@@ -739,15 +862,109 @@ function MyInvoicesModal({ isOpen, onClose }) {
   );
 }
 
+function AisProductCatalogModal({ isOpen, onClose }) {
+  if (!isOpen) return null;
+
+  const handleProductNavigate = () => {
+    onClose();
+  };
+
+  return (
+    <NewSubModalOverlay onClick={onClose}>
+      <NewSubModalContent
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          maxWidth: '960px',
+          width: '92%',
+          maxHeight: '90vh',
+          display: 'flex',
+          flexDirection: 'column',
+          padding: '24px',
+          overflow: 'hidden',
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: '12px',
+            marginBottom: '12px',
+            flexShrink: 0,
+          }}
+        >
+          <NewSubModalTitle
+            style={{
+              margin: 0,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              fontSize: '1.35rem',
+            }}
+          >
+            <FaTh style={{ opacity: 0.9 }} />
+            AIS product catalogue
+          </NewSubModalTitle>
+          <InvoicesModalClose type="button" onClick={onClose} aria-label="Close">
+            <FaTimes />
+          </InvoicesModalClose>
+        </div>
+        <NewSubModalSubtitle style={{ margin: '0 0 16px 0' }}>
+          Explore AIS Headquarters products. Choose a card to open subscriptions, the chart catalog, or the AIS portal.
+        </NewSubModalSubtitle>
+        <div style={{ overflowY: 'auto', flex: 1, minHeight: 0, paddingRight: '4px' }}>
+          <QuickAccessGrid>
+            {AIS_HEADQUARTERS_PRODUCTS.map((product) => {
+              const { Icon } = product;
+              const cardBody = (
+                <>
+                  <QuickAccessIcon>
+                    <Icon />
+                  </QuickAccessIcon>
+                  <QuickAccessTitle>{product.title}</QuickAccessTitle>
+                  <QuickAccessDescription>{product.description}</QuickAccessDescription>
+                  <QuickAccessBadge>{product.cta}</QuickAccessBadge>
+                </>
+              );
+              if (product.linkType === 'internal') {
+                return (
+                  <QuickAccessCard key={product.id} to={product.href} onClick={handleProductNavigate}>
+                    {cardBody}
+                  </QuickAccessCard>
+                );
+              }
+              return (
+                <QuickAccessCardAnchor
+                  key={product.id}
+                  href={product.href}
+                  onClick={handleProductNavigate}
+                  {...(product.linkType === 'external'
+                    ? { target: '_blank', rel: 'noopener noreferrer' }
+                    : {})}
+                >
+                  {cardBody}
+                </QuickAccessCardAnchor>
+              );
+            })}
+          </QuickAccessGrid>
+        </div>
+        <NewSubCloseBtn type="button" onClick={onClose} style={{ marginTop: '16px' }}>
+          Close
+        </NewSubCloseBtn>
+      </NewSubModalContent>
+    </NewSubModalOverlay>
+  );
+}
+
 export default function SubscriberDashboard() {
   const user = useSelector(state => state.auth.user);
   const { data: dashboardData, isLoading, error, refetch } = useGetSubscriberDashboardQuery();
-  const { data: chartOrdersData } = useGetChartOrdersQuery();
   const [activeTab, setActiveTab] = useState('eAIP');
   const [expandedSubscriptions, setExpandedSubscriptions] = useState(new Set());
   const [renewalModal, setRenewalModal] = useState({ isOpen: false, subscriptionType: null, isNew: false });
   const [showSubscriberInfoPrompt, setShowSubscriberInfoPrompt] = useState(false);
   const [myInvoicesModalOpen, setMyInvoicesModalOpen] = useState(false);
+  const [aisCatalogModalOpen, setAisCatalogModalOpen] = useState(false);
   const [receiptFile, setReceiptFile] = useState(null);
   const [isSubmittingReceipt, setIsSubmittingReceipt] = useState(false);
   const [requestInvoice] = useRequestInvoiceMutation();
@@ -755,9 +972,6 @@ export default function SubscriberDashboard() {
   const [uploadReceipt] = useUploadReceiptMutation();
   const [updateSubscriberInfo] = useUpdateSubscriberInfoMutation();
   const [createRenewalSubscription] = useCreateRenewalSubscriptionMutation();
-  
-  const chartOrdersCount = chartOrdersData?.length || 0;
-  const pendingOrdersCount = chartOrdersData?.filter(order => order.order_status === 'pending').length || 0;
   
   const subscriptionTypes = SUBSCRIPTION_TYPES.map(type => ({
     id: type.id,
@@ -1003,40 +1217,19 @@ export default function SubscriberDashboard() {
           </DashboardStatsRow>
         </WelcomeSection>
 
-        <QuickAccessGrid>
-          <QuickAccessCard to="/charts">
-            <QuickAccessIcon>
-              <FaMap />
-            </QuickAccessIcon>
-            <QuickAccessTitle>Browse Charts</QuickAccessTitle>
-            <QuickAccessDescription>
-              Explore our complete catalog of aeronautical charts. Search, filter, and order charts in various sizes.
-            </QuickAccessDescription>
-            <QuickAccessBadge>View Catalog →</QuickAccessBadge>
-          </QuickAccessCard>
-          
-          <QuickAccessCard to="/my-orders">
-            <QuickAccessIcon>
-              <FaShoppingBag />
-            </QuickAccessIcon>
-            <QuickAccessTitle>My Chart Orders</QuickAccessTitle>
-            <QuickAccessDescription>
-              View and track all your chart orders. {chartOrdersCount > 0 && (
-                <>You have {chartOrdersCount} order{chartOrdersCount !== 1 ? 's' : ''}.</>
-              )}
-            </QuickAccessDescription>
-            {chartOrdersCount > 0 ? (
-              <QuickAccessBadge>
-                {pendingOrdersCount > 0 && `${pendingOrdersCount} Pending • `}
-                {chartOrdersCount} Total Order{chartOrdersCount !== 1 ? 's' : ''} →
-              </QuickAccessBadge>
-            ) : (
-              <QuickAccessBadge>No orders yet →</QuickAccessBadge>
-            )}
-          </QuickAccessCard>
-        </QuickAccessGrid>
+        <CatalogueTrigger type="button" onClick={() => setAisCatalogModalOpen(true)}>
+          <QuickAccessIcon>
+            <FaTh />
+          </QuickAccessIcon>
+          <QuickAccessTitle>View AIS product catalogue</QuickAccessTitle>
+          <QuickAccessDescription>
+            Browse all AIS Headquarters products: AIP, AIC, NOTAM, digital data sets, aeronautical charts, PIB, and
+            AIXM-based data.
+          </QuickAccessDescription>
+          <QuickAccessBadge>Open catalogue →</QuickAccessBadge>
+        </CatalogueTrigger>
 
-        <SubscriptionsSection>
+        <SubscriptionsSection id="subscriber-subscriptions">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '20px' }}>
             <SectionTitle style={{ marginBottom: 0 }}>Your Subscriptions</SectionTitle>
             <ActionButton
@@ -1557,6 +1750,8 @@ export default function SubscriberDashboard() {
       )}
 
       <MyInvoicesModal isOpen={myInvoicesModalOpen} onClose={() => setMyInvoicesModalOpen(false)} />
+
+      <AisProductCatalogModal isOpen={aisCatalogModalOpen} onClose={() => setAisCatalogModalOpen(false)} />
 
       <RenewalModal
         isOpen={renewalModal.isOpen}

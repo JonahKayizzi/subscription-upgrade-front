@@ -287,6 +287,20 @@ const HistoryDate = styled.div`
   font-weight: 500;
 `;
 
+/** YYYY-MM-DD → same calendar day one year later. */
+function addOneYearToDateString(dateStr) {
+  if (!dateStr || dateStr.length < 10) return '';
+  const [y, m, d] = dateStr.split('-').map(Number);
+  if (!y || !m || !d) return '';
+  const next = new Date(y + 1, m - 1, d);
+  return `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}-${String(next.getDate()).padStart(2, '0')}`;
+}
+
+function localTodayDateString() {
+  const t = new Date();
+  return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`;
+}
+
 export default function SubscriptionForm() {
   const { id, subscriptionId } = useParams();
   const navigate = useNavigate();
@@ -362,6 +376,16 @@ export default function SubscriptionForm() {
     return '';
   };
 
+  // New subscription: default start = today, expiry = one year later (admin can edit both)
+  useEffect(() => {
+    if (isEditMode) return;
+    setForm((f) => {
+      if (f.sub_start_date && f.sub_exp_date) return f;
+      const start = localTodayDateString();
+      return { ...f, sub_start_date: start, sub_exp_date: addOneYearToDateString(start) };
+    });
+  }, [isEditMode]);
+
   useEffect(() => {
     if (isEditMode && subscriptionDetails) {
       const sd = subscriptionDetails;
@@ -383,7 +407,15 @@ export default function SubscriptionForm() {
 
   const handleChange = e => {
     const { name, value } = e.target;
-    setForm(f => ({ ...f, [name]: value }));
+    if (name === 'sub_start_date') {
+      setForm((f) => ({
+        ...f,
+        sub_start_date: value,
+        sub_exp_date: addOneYearToDateString(value),
+      }));
+      return;
+    }
+    setForm((f) => ({ ...f, [name]: value }));
   };
 
   const handleFileChange = e => {
@@ -396,6 +428,12 @@ export default function SubscriptionForm() {
     setError('');
     if (!form.sub_type || !form.sub_start_date || !form.sub_exp_date || !form.sub_amount) {
       setError('Please fill in all required fields.');
+      return;
+    }
+    const startMs = new Date(form.sub_start_date + 'T12:00:00').getTime();
+    const expMs = new Date(form.sub_exp_date + 'T12:00:00').getTime();
+    if (!(expMs > startMs)) {
+      setError('Expiry date must be after the start date (default is one year after start).');
       return;
     }
     try {
@@ -660,14 +698,20 @@ export default function SubscriptionForm() {
     { 
       step: 'Invoice', 
       completed: hasInvoice || isInvoiceNotRequired, 
-      description: hasInvoice ? 'Submitted' : isInvoiceNotRequired ? 'Not Required - No invoice needed for this subscription' : hasInvoiceRequested ? 'Requested on ' + new Date(subscriptionDetails?.invoice_requested_date).toLocaleDateString() : 'Waiting for subscriber to request',
+      description: hasInvoice
+        ? 'Submitted'
+        : isInvoiceNotRequired
+          ? 'Not Required - No invoice needed for this subscription'
+          : hasInvoiceRequested
+            ? 'Requested on ' + new Date(subscriptionDetails?.invoice_requested_date).toLocaleDateString()
+            : 'Admin can upload invoice directly at any time',
       hasAction: (!hasInvoice && !isInvoiceNotRequired) || hasInvoice,
              actionButton: !hasInvoice && !isInvoiceNotRequired ? (
          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px', marginLeft: 'auto' }}>
-           {!hasInvoiceRequested ? (
+           {!hasInvoiceRequested && (
              <>
                <DateLabel>
-                 <span>Set request date (offline):</span>
+                 <span>Set request date (optional):</span>
                  <DateInput
                    type="date"
                    value={manualInvoiceRequestDate}
@@ -681,62 +725,61 @@ export default function SubscriptionForm() {
                  disabled={!manualInvoiceRequestDate || isSettingInvoiceDate}
                  style={{ fontSize: '0.75rem', padding: '4px 8px' }}
                >
-                 {isSettingInvoiceDate ? 'Setting...' : 'Set Date'}
+                 {isSettingInvoiceDate ? 'Setting...' : 'Save Date'}
                </ActionButton>
              </>
-           ) : (
-             <>
-               <div style={{ fontSize: '0.75rem', color: 'var(--color-success)', marginBottom: '8px' }}>
-                 Date set: {new Date(subscriptionDetails.invoice_requested_date || manualInvoiceRequestDate).toLocaleDateString()}
-               </div>
-               <FileUploadSection>
-                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                     <label style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
-                       Invoice Number:
-                     </label>
-                     <input
-                       type="text"
-                       placeholder="Enter invoice number"
-                       value={invoiceNumber || ''}
-                       onChange={(e) => setInvoiceNumber(e.target.value)}
-                       style={{
-                         padding: '4px 8px',
-                         border: '1px solid var(--color-border)',
-                         borderRadius: '4px',
-                         fontSize: '0.75rem',
-                         background: 'var(--color-background)',
-                         color: 'var(--color-text)',
-                         minWidth: '120px'
-                       }}
-                     />
-                   </div>
-                   <UploadLabel>
-                     <FaUpload />
-                     Upload Invoice File
-                     <UploadInput
-                       type="file"
-                       accept=".pdf,.jpg,.jpeg,.png"
-                       onChange={(e) => handleUploadInvoice(subscriptionDetails?.id, e)}
-                     />
-                   </UploadLabel>
-                   {invoiceFile && (
-                     <div style={{ fontSize: '0.75rem', color: 'var(--color-success)', marginTop: '4px' }}>
-                       ✓ File selected: {invoiceFile.name}
-                     </div>
-                   )}
-                   <ActionButton 
-                     className="primary" 
-                     onClick={() => handleSubmitInvoice(subscriptionDetails?.id)}
-                     disabled={!invoiceFile || !invoiceNumber || isSubmittingInvoice}
-                     style={{ fontSize: '0.75rem', padding: '4px 8px', alignSelf: 'flex-start' }}
-                   >
-                     {isSubmittingInvoice ? 'Submitting...' : 'Submit Invoice'}
-                   </ActionButton>
-                 </div>
-               </FileUploadSection>
-             </>
            )}
+           {hasInvoiceRequested && (
+             <div style={{ fontSize: '0.75rem', color: 'var(--color-success)', marginBottom: '8px' }}>
+               Date set: {new Date(subscriptionDetails.invoice_requested_date || manualInvoiceRequestDate).toLocaleDateString()}
+             </div>
+           )}
+           <FileUploadSection>
+             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                 <label style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
+                   Invoice Number:
+                 </label>
+                 <input
+                   type="text"
+                   placeholder="Enter invoice number"
+                   value={invoiceNumber || ''}
+                   onChange={(e) => setInvoiceNumber(e.target.value)}
+                   style={{
+                     padding: '4px 8px',
+                     border: '1px solid var(--color-border)',
+                     borderRadius: '4px',
+                     fontSize: '0.75rem',
+                     background: 'var(--color-background)',
+                     color: 'var(--color-text)',
+                     minWidth: '120px'
+                   }}
+                 />
+               </div>
+               <UploadLabel>
+                 <FaUpload />
+                 Upload Invoice File
+                 <UploadInput
+                   type="file"
+                   accept=".pdf,.jpg,.jpeg,.png"
+                   onChange={(e) => handleUploadInvoice(subscriptionDetails?.id, e)}
+                 />
+               </UploadLabel>
+               {invoiceFile && (
+                 <div style={{ fontSize: '0.75rem', color: 'var(--color-success)', marginTop: '4px' }}>
+                   ✓ File selected: {invoiceFile.name}
+                 </div>
+               )}
+               <ActionButton 
+                 className="primary" 
+                 onClick={() => handleSubmitInvoice(subscriptionDetails?.id)}
+                 disabled={!invoiceFile || !invoiceNumber || isSubmittingInvoice}
+                 style={{ fontSize: '0.75rem', padding: '4px 8px', alignSelf: 'flex-start' }}
+               >
+                 {isSubmittingInvoice ? 'Submitting...' : 'Submit Invoice'}
+               </ActionButton>
+             </div>
+           </FileUploadSection>
          </div>
        ) : isInvoiceNotRequired ? (
         <div style={{ fontSize: '0.75rem', color: 'var(--color-success)', marginTop: '8px', marginLeft: 'auto', fontStyle: 'italic' }}>
