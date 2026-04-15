@@ -309,7 +309,6 @@ export default function SubscriptionForm() {
     sub_exp_date: '',
     sub_amount: '',
     sub_delivery: '',
-    sub_receipt_no: '',
     sub_invoice_no: '',
     eaip_user_name: '',
     eaip_password: '',
@@ -326,7 +325,6 @@ export default function SubscriptionForm() {
   const [isSettingInvoiceDate, setIsSettingInvoiceDate] = useState(false);
   const [isSubmittingInvoice, setIsSubmittingInvoice] = useState(false);
   const [receiptFile, setReceiptFile] = useState(null);
-  const [receiptNumber, setReceiptNumber] = useState('');
   const [isSubmittingReceipt, setIsSubmittingReceipt] = useState(false);
   const [isVerifyingReceipt, setIsVerifyingReceipt] = useState(false);
   const [showReceiptVerificationModal, setShowReceiptVerificationModal] = useState(false);
@@ -376,7 +374,6 @@ export default function SubscriptionForm() {
         sub_exp_date: subExp,
         sub_amount: sd.sub_amount != null && sd.sub_amount !== '' ? String(sd.sub_amount) : '',
         sub_delivery: sd.sub_delivery || '',
-        sub_receipt_no: sd.receipt_no || '',
         sub_invoice_no: sd.invoice_no || '',
         eaip_user_name: sd.eaip_user_name || '',
         eaip_password: sd.eaip_password || '',
@@ -409,7 +406,6 @@ export default function SubscriptionForm() {
       data.append('sub_exp_date', form.sub_exp_date);
       data.append('sub_amount', form.sub_amount);
       data.append('sub_delivery', form.sub_delivery);
-      data.append('sub_receipt_no', form.sub_receipt_no);
       data.append('sub_invoice_no', form.sub_invoice_no);
       if (form.sub_type === 'eAIP') {
         data.append('eaip_user_name', form.eaip_user_name);
@@ -427,7 +423,6 @@ export default function SubscriptionForm() {
           sub_exp_date: form.sub_exp_date,
           sub_amount: form.sub_amount,
           sub_delivery: form.sub_delivery,
-          receipt_no: form.sub_receipt_no,
           invoice_no: form.sub_invoice_no,
           eaip_user_name: form.eaip_user_name,
           eaip_password: form.eaip_password,
@@ -516,20 +511,18 @@ export default function SubscriptionForm() {
   };
 
   const handleSubmitReceipt = async (subscriptionId) => {
-    if (!receiptFile || !receiptNumber) return;
+    if (!receiptFile) return;
     
     try {
       setIsSubmittingReceipt(true);
       
       await uploadReceipt({
         subscriptionId,
-        receiptFile: receiptFile,
-        receiptNumber: receiptNumber || null
+        receiptFile: receiptFile
       }).unwrap();
       
       // Clear form and refresh data
       setReceiptFile(null);
-      setReceiptNumber('');
       
       // Refresh subscription data to show updated status
       // The subscription query will automatically refetch
@@ -824,26 +817,6 @@ export default function SubscriptionForm() {
              </div>
              <FileUploadSection>
                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                   <label style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
-                     Receipt Number:
-                   </label>
-                   <input
-                     type="text"
-                     placeholder="Enter receipt number"
-                     value={receiptNumber || ''}
-                     onChange={(e) => setReceiptNumber(e.target.value)}
-                     style={{
-                       padding: '4px 8px',
-                       border: '1px solid var(--color-border)',
-                       borderRadius: '4px',
-                       fontSize: '0.75rem',
-                       background: 'var(--color-background)',
-                       color: 'var(--color-text)',
-                       minWidth: '120px'
-                     }}
-                   />
-                 </div>
                  <UploadLabel>
                    <FaUpload />
                    Upload Receipt File
@@ -1096,10 +1069,6 @@ export default function SubscriptionForm() {
               <FormGroup>
                 <label>Expiry Date *</label>
                 <input type="date" name="sub_exp_date" value={form.sub_exp_date} onChange={handleChange} required disabled={isExpired} />
-              </FormGroup>
-              <FormGroup>
-                <label>Receipt Number</label>
-                <input name="sub_receipt_no" value={form.sub_receipt_no} onChange={handleChange} placeholder="Receipt No" disabled={isExpired} />
               </FormGroup>
               <FormGroup>
                 <label>Invoice Number</label>

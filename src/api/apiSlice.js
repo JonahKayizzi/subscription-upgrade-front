@@ -200,13 +200,10 @@ export const apiSlice = createApi({
     }),
     // Upload receipt
     uploadReceipt: builder.mutation({
-      query: ({ subscriptionId, receiptFile, receiptNumber }) => {
+      query: ({ subscriptionId, receiptFile }) => {
         const formData = new FormData();
         formData.append('subscriptionId', subscriptionId);
         formData.append('receiptFile', receiptFile);
-        if (receiptNumber) {
-          formData.append('receiptNumber', receiptNumber);
-        }
         
         return {
           url: '/subscriber/upload-receipt',

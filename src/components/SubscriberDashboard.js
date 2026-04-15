@@ -279,6 +279,16 @@ const ActionButton = styled.button`
       background: #d97706;
     }
   }
+
+  &:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+  }
+
+  &.primary:disabled {
+    background: #9ca3af;
+    color: white;
+  }
 `;
 
 const FileUploadSection = styled.div`
@@ -482,12 +492,8 @@ const ExpiredBadge = styled.span`
 
 const QuickAccessGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 20px;
-
-  @media (max-width: 900px) {
-    grid-template-columns: 1fr 1fr;
-  }
 
   @media (max-width: 600px) {
     grid-template-columns: 1fr;
@@ -587,58 +593,6 @@ const NewSubModalSubtitle = styled.p`
   margin: 0 0 24px 0;
 `;
 
-const NewSubTypeGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-  @media (max-width: 600px) {
-    grid-template-columns: 1fr;
-  }
-`;
-
-const NewSubTypeCard = styled.button`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  padding: 20px 16px;
-  border: 2px solid var(--color-border);
-  border-radius: 12px;
-  background: var(--color-bg);
-  color: var(--color-text);
-  cursor: pointer;
-  transition: all 0.2s;
-  text-align: center;
-  &:hover {
-    border-color: var(--color-accent2);
-    background: rgba(167, 139, 250, 0.08);
-    transform: translateY(-2px);
-  }
-`;
-
-const NewSubTypeIcon = styled.div`
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24px;
-  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent2) 100%);
-  color: white;
-`;
-
-const NewSubTypeLabel = styled.span`
-  font-weight: 600;
-  font-size: 1rem;
-`;
-
-const NewSubTypeDesc = styled.span`
-  font-size: 0.8rem;
-  color: var(--color-text-muted);
-  line-height: 1.3;
-`;
-
 const NewSubCloseBtn = styled.button`
   margin-top: 20px;
   padding: 8px 16px;
@@ -655,8 +609,28 @@ const NewSubCloseBtn = styled.button`
   }
 `;
 
-function MyInvoicesSection() {
-  const { data, isLoading } = useGetMyInvoicesQuery();
+const InvoicesModalClose = styled.button`
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 10px;
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font-size: 1.25rem;
+  transition: color 0.2s, background 0.2s;
+  &:hover {
+    color: var(--color-text);
+    background: var(--color-border);
+  }
+`;
+
+function MyInvoicesModal({ isOpen, onClose }) {
+  const { data, isLoading } = useGetMyInvoicesQuery(undefined, { skip: !isOpen });
   const [triggerSubscriptionDownload, { isLoading: isDownloadingSub }] = useLazyGetInvoiceDownloadQuery();
   const [triggerChartOrderDownload, { isLoading: isDownloadingCo }] = useLazyGetChartOrderInvoiceDownloadQuery();
   const invoices = data?.invoices || [];
@@ -679,55 +653,89 @@ function MyInvoicesSection() {
     }
   };
 
+  if (!isOpen) return null;
+
   return (
-    <div style={{ marginBottom: '0' }} id="my-invoices">
-      <SectionTitle style={{ marginBottom: '16px' }}>
-        <FaFileInvoice style={{ marginRight: '8px', verticalAlign: 'middle' }} />
-        My Invoices
-      </SectionTitle>
-      <Card style={{ padding: '20px', borderRadius: '12px' }}>
-        {isLoading ? (
-          <div style={{ padding: '16px', color: 'var(--color-text-muted)' }}>Loading...</div>
-        ) : invoices.length === 0 ? (
-          <div style={{ padding: '24px', textAlign: 'center', color: 'var(--color-text-muted)' }}>
-            <FaFileInvoice style={{ fontSize: '2rem', marginBottom: '12px', opacity: 0.6 }} />
-            <p style={{ margin: 0, fontSize: '1rem' }}>No invoices yet</p>
-            <p style={{ margin: '8px 0 0', fontSize: '0.9rem' }}>When you request an invoice for a subscription renewal or chart order, it will appear here for download once ready.</p>
-          </div>
-        ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
-                  <th style={{ textAlign: 'left', padding: '10px 12px', color: 'var(--color-accent)' }}>Description</th>
-                  <th style={{ textAlign: 'left', padding: '10px 12px', color: 'var(--color-accent)' }}>Status</th>
-                  <th style={{ textAlign: 'left', padding: '10px 12px', color: 'var(--color-accent)' }}>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {invoices.map((inv) => (
-                  <tr key={`${inv.requestType || 'subscription'}-${inv.id}`} style={{ borderBottom: '1px solid var(--color-border)' }}>
-                    <td style={{ padding: '10px 12px' }}>{inv.requestType === 'chart_order' ? (inv.sub_type || 'Chart order') : `Renewal ${inv.sub_type || '2025'}`}</td>
-                    <td style={{ padding: '10px 12px' }}>
-                      {inv.invoice_status === 'uploaded' ? 'Uploaded' : 'Pending'}
-                    </td>
-                    <td style={{ padding: '10px 12px' }}>
-                      {inv.invoice_status === 'uploaded' ? (
-                        <ActionButton className="primary" onClick={() => handleDownload(inv)} disabled={isDownloading} style={{ fontSize: '0.8rem', padding: '6px 12px' }}>
-                          <FaDownload style={{ marginRight: '6px' }} /> Download
-                        </ActionButton>
-                      ) : (
-                        <span style={{ fontStyle: 'italic', color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>Invoice is being prepared</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </Card>
-    </div>
+    <NewSubModalOverlay onClick={onClose}>
+      <NewSubModalContent
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          maxWidth: '720px',
+          width: '92%',
+          maxHeight: '88vh',
+          display: 'flex',
+          flexDirection: 'column',
+          padding: '24px',
+          overflow: 'hidden'
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '16px', flexShrink: 0 }}>
+          <NewSubModalTitle style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.35rem' }}>
+            <FaFileInvoice style={{ opacity: 0.9 }} />
+            My Invoices
+          </NewSubModalTitle>
+          <InvoicesModalClose type="button" onClick={onClose} aria-label="Close">
+            <FaTimes />
+          </InvoicesModalClose>
+        </div>
+        <div style={{ overflowY: 'auto', flex: 1, minHeight: 0 }}>
+          <Card style={{ padding: '20px', borderRadius: '12px', margin: 0 }}>
+            {isLoading ? (
+              <div style={{ padding: '16px', color: 'var(--color-text-muted)' }}>Loading...</div>
+            ) : invoices.length === 0 ? (
+              <div style={{ padding: '24px', textAlign: 'center', color: 'var(--color-text-muted)' }}>
+                <FaFileInvoice style={{ fontSize: '2rem', marginBottom: '12px', opacity: 0.6 }} />
+                <p style={{ margin: 0, fontSize: '1rem' }}>No invoices yet</p>
+                <p style={{ margin: '8px 0 0', fontSize: '0.9rem' }}>
+                  When you request an invoice for a subscription renewal or chart order, it will appear here for download once ready.
+                </p>
+              </div>
+            ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
+                      <th style={{ textAlign: 'left', padding: '10px 12px', color: 'var(--color-accent)' }}>Description</th>
+                      <th style={{ textAlign: 'left', padding: '10px 12px', color: 'var(--color-accent)' }}>Status</th>
+                      <th style={{ textAlign: 'left', padding: '10px 12px', color: 'var(--color-accent)' }}>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {invoices.map((inv) => (
+                      <tr key={`${inv.requestType || 'subscription'}-${inv.id}`} style={{ borderBottom: '1px solid var(--color-border)' }}>
+                        <td style={{ padding: '10px 12px' }}>
+                          {inv.requestType === 'chart_order' ? (inv.sub_type || 'Chart order') : `Renewal ${inv.sub_type || '2025'}`}
+                        </td>
+                        <td style={{ padding: '10px 12px' }}>
+                          {inv.invoice_status === 'uploaded' ? 'Uploaded' : 'Pending'}
+                        </td>
+                        <td style={{ padding: '10px 12px' }}>
+                          {inv.invoice_status === 'uploaded' ? (
+                            <ActionButton
+                              className="primary"
+                              onClick={() => handleDownload(inv)}
+                              disabled={isDownloading}
+                              style={{ fontSize: '0.8rem', padding: '6px 12px' }}
+                            >
+                              <FaDownload style={{ marginRight: '6px' }} /> Download
+                            </ActionButton>
+                          ) : (
+                            <span style={{ fontStyle: 'italic', color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>Invoice is being prepared</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </Card>
+        </div>
+        <NewSubCloseBtn type="button" onClick={onClose} style={{ marginTop: '16px' }}>
+          Close
+        </NewSubCloseBtn>
+      </NewSubModalContent>
+    </NewSubModalOverlay>
   );
 }
 
@@ -738,9 +746,9 @@ export default function SubscriberDashboard() {
   const [activeTab, setActiveTab] = useState('eAIP');
   const [expandedSubscriptions, setExpandedSubscriptions] = useState(new Set());
   const [renewalModal, setRenewalModal] = useState({ isOpen: false, subscriptionType: null, isNew: false });
-  const [newSubscriptionTypeModalOpen, setNewSubscriptionTypeModalOpen] = useState(false);
+  const [showSubscriberInfoPrompt, setShowSubscriberInfoPrompt] = useState(false);
+  const [myInvoicesModalOpen, setMyInvoicesModalOpen] = useState(false);
   const [receiptFile, setReceiptFile] = useState(null);
-  const [receiptNumber, setReceiptNumber] = useState('');
   const [isSubmittingReceipt, setIsSubmittingReceipt] = useState(false);
   const [requestInvoice] = useRequestInvoiceMutation();
   const [markInvoiceNotRequired] = useMarkInvoiceNotRequiredMutation();
@@ -790,20 +798,18 @@ export default function SubscriberDashboard() {
   };
 
   const handleSubmitReceipt = async (subscriptionId) => {
-    if (!receiptFile || !receiptNumber) return;
+    if (!receiptFile) return;
     
     try {
       setIsSubmittingReceipt(true);
       
       await uploadReceipt({
         subscriptionId,
-        receiptFile: receiptFile,
-        receiptNumber: receiptNumber
+        receiptFile: receiptFile
       }).unwrap();
       
       // Clear form and refresh data
       setReceiptFile(null);
-      setReceiptNumber('');
       
       // Refresh the data to show updated status
       refetch();
@@ -816,26 +822,37 @@ export default function SubscriberDashboard() {
     }
   };
 
-  const handleNewSubscription = () => {
-    setNewSubscriptionTypeModalOpen(true);
+  const hasActiveSubscriptionForType = (typeId, subs) => {
+    const list = subs ?? [];
+    return list.some(
+      (sub) =>
+        (sub.sub_type === typeId || sub.publication_type === typeId) &&
+        String(sub.status || '').toLowerCase() === 'active'
+    );
   };
 
-  const handleChooseNewSubscriptionType = (typeId) => {
-    setNewSubscriptionTypeModalOpen(false);
-    setRenewalModal({ isOpen: true, subscriptionType: typeId, isNew: true });
+  const handleNewSubscription = () => {
+    if (!isSubscriberInfoComplete) {
+      setShowSubscriberInfoPrompt(true);
+      document.getElementById('subscriber-info-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+    if (hasActiveSubscriptionForType(activeTab, dashboardData?.subscriptions)) return;
+    setRenewalModal({ isOpen: true, subscriptionType: activeTab, isNew: true });
   };
 
   const handleUpdateSubscriberInfo = async (formData) => {
     try {
       await updateSubscriberInfo(formData).unwrap();
       // Refresh dashboard data after update
-      // TODO: Add refetch functionality
+      refetch();
     } catch (err) {
       throw new Error(err.data?.error || 'Failed to update subscriber information');
     }
   };
 
   const handleRenewSubscription = async (subscriptionType) => {
+    if (hasActiveSubscriptionForType(subscriptionType, dashboardData?.subscriptions)) return;
     setRenewalModal({ isOpen: true, subscriptionType });
   };
 
@@ -926,6 +943,11 @@ export default function SubscriberDashboard() {
   const { subscriptions = [], stats = {}, subscriber } = dashboardData || {};
   const { activeSubscriptions = 0, pendingSubscriptions = 0 } = stats;
   const hasExistingData = subscriber && subscriber.sub_name;
+  const isSubscriberInfoComplete = Boolean(
+    subscriber?.sub_name?.trim() &&
+    subscriber?.sub_email?.trim() &&
+    subscriber?.publication_type?.trim()
+  );
   const typeLabelById = SUBSCRIPTION_TYPES.reduce((acc, type) => {
     acc[type.id] = type.label;
     return acc;
@@ -951,6 +973,13 @@ export default function SubscriberDashboard() {
   const filteredSubscriptions = subscriptions
     .filter(sub => sub.sub_type === activeTab || sub.publication_type === activeTab)
     .sort((a, b) => new Date(b.sub_date) - new Date(a.sub_date)); // Most recent first
+
+  const hasActiveSubscriptionForTab = filteredSubscriptions.some(
+    (sub) => String(sub.status || '').toLowerCase() === 'active'
+  );
+  const subscriptionActionsDisabledReason = hasActiveSubscriptionForTab
+    ? 'You already have an active subscription for this publication type. Renew or start a new subscription when it is no longer active.'
+    : undefined;
 
   return (
     <DashboardContainer>
@@ -1005,25 +1034,17 @@ export default function SubscriberDashboard() {
               <QuickAccessBadge>No orders yet →</QuickAccessBadge>
             )}
           </QuickAccessCard>
-
-          <QuickAccessCard as="div" onClick={() => document.getElementById('my-invoices')?.scrollIntoView({ behavior: 'smooth' })} style={{ cursor: 'pointer' }}>
-            <QuickAccessIcon>
-              <FaFileInvoice />
-            </QuickAccessIcon>
-            <QuickAccessTitle>My Invoices</QuickAccessTitle>
-            <QuickAccessDescription>
-              Download invoices for your subscription renewals and chart orders once they are ready.
-            </QuickAccessDescription>
-            <QuickAccessBadge>View & download →</QuickAccessBadge>
-          </QuickAccessCard>
         </QuickAccessGrid>
-
-        <MyInvoicesSection />
 
         <SubscriptionsSection>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '20px' }}>
             <SectionTitle style={{ marginBottom: 0 }}>Your Subscriptions</SectionTitle>
-            <ActionButton className="primary" onClick={handleNewSubscription}>
+            <ActionButton
+              className="primary"
+              onClick={handleNewSubscription}
+              disabled={hasActiveSubscriptionForTab}
+              title={subscriptionActionsDisabledReason}
+            >
               <FaPlus style={{ marginRight: '8px' }} />
               New Subscription
             </ActionButton>
@@ -1050,7 +1071,8 @@ export default function SubscriberDashboard() {
               <TabTitle>{subscriptionTypes.find(t => t.id === activeTab)?.label} Subscriptions</TabTitle>
               <RenewButton 
                 onClick={() => handleRenewSubscription(activeTab)}
-                disabled={filteredSubscriptions.length === 0}
+                disabled={filteredSubscriptions.length === 0 || hasActiveSubscriptionForTab}
+                title={subscriptionActionsDisabledReason}
               >
                 <FaPlus />
                 Renew {activeTab}
@@ -1177,26 +1199,6 @@ export default function SubscriberDashboard() {
                       </div>
                       <FileUploadSection>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <label style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
-                              Receipt Number:
-                            </label>
-                            <input
-                              type="text"
-                              placeholder="Enter receipt number"
-                              value={receiptNumber || ''}
-                              onChange={(e) => setReceiptNumber(e.target.value)}
-                              style={{
-                                padding: '4px 8px',
-                                border: '1px solid var(--color-border)',
-                                borderRadius: '4px',
-                                fontSize: '0.75rem',
-                                background: 'var(--color-background)',
-                                color: 'var(--color-text)',
-                                minWidth: '120px'
-                              }}
-                            />
-                          </div>
                           <UploadLabel>
                             <FaUpload />
                             Upload Receipt File
@@ -1214,7 +1216,7 @@ export default function SubscriberDashboard() {
                           <ActionButton 
                             className="primary" 
                             onClick={() => handleSubmitReceipt(subscription.id)}
-                            disabled={!receiptFile || !receiptNumber || isSubmittingReceipt}
+                            disabled={!receiptFile || isSubmittingReceipt}
                             style={{ fontSize: '0.75rem', padding: '4px 8px', alignSelf: 'flex-start' }}
                           >
                             {isSubmittingReceipt ? 'Submitting...' : 'Submit Receipt'}
@@ -1498,37 +1500,63 @@ export default function SubscriberDashboard() {
        </LeftPanel>
 
        <RightPanel>
-         <SubscriberInfoForm
-           subscriberData={subscriber}
-           onSubmit={handleUpdateSubscriberInfo}
-           isUpdating={hasExistingData}
-                 />
+        <div id="subscriber-info-form">
+          <SubscriberInfoForm
+            subscriberData={subscriber}
+            onSubmit={handleUpdateSubscriberInfo}
+            isUpdating={hasExistingData}
+          />
+        </div>
+        <QuickAccessCard
+          as="div"
+          role="button"
+          tabIndex={0}
+          onClick={() => setMyInvoicesModalOpen(true)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              setMyInvoicesModalOpen(true);
+            }
+          }}
+          style={{ cursor: 'pointer', width: '100%', minHeight: 'auto' }}
+        >
+          <QuickAccessIcon>
+            <FaFileInvoice />
+          </QuickAccessIcon>
+          <QuickAccessTitle>My Invoices</QuickAccessTitle>
+          <QuickAccessDescription>
+            Download invoices for your subscription renewals and chart orders once they are ready.
+          </QuickAccessDescription>
+          <QuickAccessBadge>View & download →</QuickAccessBadge>
+        </QuickAccessCard>
       </RightPanel>
 
-      {newSubscriptionTypeModalOpen && (
-        <NewSubModalOverlay onClick={() => setNewSubscriptionTypeModalOpen(false)}>
+      {showSubscriberInfoPrompt && (
+        <NewSubModalOverlay onClick={() => setShowSubscriberInfoPrompt(false)}>
           <NewSubModalContent onClick={(e) => e.stopPropagation()}>
-            <NewSubModalTitle>New Subscription</NewSubModalTitle>
-            <NewSubModalSubtitle>Choose the type of subscription you want to start</NewSubModalSubtitle>
-            <NewSubTypeGrid>
-              {subscriptionTypes.map((type) => (
-                <NewSubTypeCard
-                  key={type.id}
-                  type="button"
-                  onClick={() => handleChooseNewSubscriptionType(type.id)}
-                >
-                  <NewSubTypeIcon>{type.icon}</NewSubTypeIcon>
-                  <NewSubTypeLabel>{type.label}</NewSubTypeLabel>
-                  <NewSubTypeDesc>{type.description}</NewSubTypeDesc>
-                </NewSubTypeCard>
-              ))}
-            </NewSubTypeGrid>
-            <NewSubCloseBtn type="button" onClick={() => setNewSubscriptionTypeModalOpen(false)}>
+            <NewSubModalTitle>Complete Subscriber Information First</NewSubModalTitle>
+            <NewSubModalSubtitle>
+              Please complete the required fields in the Update Subscriber Information form before starting a new subscription.
+            </NewSubModalSubtitle>
+            <ActionButton
+              className="primary"
+              type="button"
+              onClick={() => {
+                setShowSubscriberInfoPrompt(false);
+                document.getElementById('subscriber-info-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }}
+              style={{ width: '100%', marginRight: 0 }}
+            >
+              Go to Update Subscriber Information
+            </ActionButton>
+            <NewSubCloseBtn type="button" onClick={() => setShowSubscriberInfoPrompt(false)}>
               Cancel
             </NewSubCloseBtn>
           </NewSubModalContent>
         </NewSubModalOverlay>
       )}
+
+      <MyInvoicesModal isOpen={myInvoicesModalOpen} onClose={() => setMyInvoicesModalOpen(false)} />
 
       <RenewalModal
         isOpen={renewalModal.isOpen}

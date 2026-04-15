@@ -93,7 +93,7 @@ const OptionGroupTitle = styled.h4`
 
 const OptionItem = styled.div`
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 12px;
   margin-bottom: 8px;
   padding: 8px 12px;
@@ -126,7 +126,23 @@ const OptionLabel = styled.label`
 const OptionPrice = styled.span`
   font-weight: 600;
   color: #7c3aed;
+  font-size: 0.85rem;
+  text-align: right;
+  max-width: 148px;
+  line-height: 1.25;
+  flex-shrink: 0;
+`;
+
+const PricingNotice = styled.div`
+  margin-top: -4px;
+  margin-bottom: 14px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #f5f3ff;
+  border: 1px solid #ddd6fe;
+  color: #5b21b6;
   font-size: 0.9rem;
+  font-weight: 600;
 `;
 
 const ActionSection = styled.div`
@@ -177,6 +193,51 @@ const CloseButton = styled.button`
   }
 `;
 
+const VAT_RATE = 0.18;
+
+function formatUsdInclusive(baseUsd) {
+  const total = baseUsd * (1 + VAT_RATE);
+  return `${total.toFixed(2)} USD`;
+}
+
+/** Base USD per Table 1 (before VAT). Returns null when no fixed list price. */
+function getPaperOptionBaseUsd(option) {
+  const o = option.toLowerCase();
+  if (o.includes('amendment')) {
+    if (o.includes('hand delivery')) return 60;
+    if (o.includes('postage within country')) return 103;
+    if (o.includes('postage within africa')) return 117;
+    if (o.includes('rest of the world')) return 170;
+    return null;
+  }
+  if (o.includes('annual subscription') && !o.includes('amendment')) return null;
+  if (o.includes('purchase of paper copy')) return 230;
+  if (o.includes('hand delivery')) return 230;
+  if (o.includes('postage within country')) return 293;
+  if (o.includes('postage within africa')) return 327;
+  if (o.includes('rest of the world')) return 366;
+  return null;
+}
+
+/** Base USD per Table 1 (before VAT). Returns null when no fixed list price. */
+function getCdOptionBaseUsd(option) {
+  const o = option.toLowerCase();
+  if (o.includes('annual subscription of cd copy')) return null;
+  if (o.includes('annual subscription for cd')) {
+    if (o.includes('hand delivery')) return 70;
+    if (o.includes('postage within country')) return 100;
+    if (o.includes('postage within africa')) return 130;
+    if (o.includes('rest of the world')) return 170;
+    return null;
+  }
+  if (o.includes('purchase of cd copy')) return 70;
+  if (o.includes('hand delivery')) return 70;
+  if (o.includes('postage within country')) return 100;
+  if (o.includes('postage within africa')) return 130;
+  if (o.includes('rest of the world')) return 170;
+  return null;
+}
+
 const RenewalModal = ({ 
   isOpen, 
   onClose, 
@@ -196,23 +257,16 @@ const RenewalModal = ({
     // Convert options array to object with default prices
     const options = {};
     pricing.options.forEach(option => {
-      // Set default prices based on subscription type
       let price = '120 USD'; // Default
       
       if (type === 'eAIP') {
-        price = '120 USD';
+        price = '141.60 USD';
       } else if (type === 'paper' || type === 'Paper AIP') {
-        if (option.includes('hand delivery')) price = '230 USD';
-        else if (option.includes('postage within country')) price = '293 USD';
-        else if (option.includes('postage within Africa')) price = '327 USD';
-        else if (option.includes('rest of the world')) price = '366 USD';
-        else price = '230 USD';
+        const base = getPaperOptionBaseUsd(option);
+        price = base != null ? formatUsdInclusive(base) : '—';
       } else if (type === 'CD' || type === 'CD AIP') {
-        if (option.includes('hand delivery')) price = '70 USD';
-        else if (option.includes('postage within country')) price = '100 USD';
-        else if (option.includes('postage within Africa')) price = '130 USD';
-        else if (option.includes('rest of the world')) price = '170 USD';
-        else price = '70 USD';
+        const baseCd = getCdOptionBaseUsd(option);
+        price = baseCd != null ? formatUsdInclusive(baseCd) : '—';
       }
       
       options[option] = price;
@@ -244,6 +298,10 @@ const RenewalModal = ({
   if (!isOpen) return null;
 
   const subscriptionOptions = getSubscriptionOptions(subscriptionType);
+  const isEAIPSubscription = subscriptionType === 'eAIP';
+  const isPaperSubscription = subscriptionType === 'paper' || subscriptionType === 'Paper AIP';
+  const isCDSubscription = subscriptionType === 'CD' || subscriptionType === 'CD AIP';
+  const showVatInclusiveNotice = isEAIPSubscription || isPaperSubscription || isCDSubscription;
 
   return (
     <ModalOverlay onClick={onClose}>
@@ -268,6 +326,11 @@ const RenewalModal = ({
 
         <OptionsSection>
           <OptionsTitle>Select Your Subscription Options</OptionsTitle>
+          {showVatInclusiveNotice && (
+            <PricingNotice>
+              All prices are inclusive of 18% VAT.
+            </PricingNotice>
+          )}
           
           <OptionGroup>
             <OptionGroupTitle>{subscriptionType} Options</OptionGroupTitle>
