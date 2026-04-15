@@ -415,11 +415,19 @@ const DeleteConfirmActions = styled.div`
   gap: 10px;
 `;
 
+const FloatingNotificationWrap = styled.div`
+  position: fixed;
+  top: 84px;
+  right: 20px;
+  z-index: 1200;
+  width: min(420px, calc(100vw - 32px));
+`;
+
 export default function SubscribersTable() {
   const navigate = useNavigate();
   const globalSearchQuery = useSelector(state => state.search.query);
-  const { data: allData, isLoading: isLoadingAll, error: allError } = useGetSubscribersQuery(undefined, { skip: globalSearchQuery !== '' });
-  const { data: searchData, isLoading: isLoadingSearch, error: searchError } = useSearchSubscribersQuery(globalSearchQuery, {
+  const { data: allData, isLoading: isLoadingAll, error: allError, refetch: refetchAllSubscribers } = useGetSubscribersQuery(undefined, { skip: globalSearchQuery !== '' });
+  const { data: searchData, isLoading: isLoadingSearch, error: searchError, refetch: refetchSearchSubscribers } = useSearchSubscribersQuery(globalSearchQuery, {
     skip: globalSearchQuery === ''
   });
   const [deleteSubscriber] = useDeleteSubscriberMutation();
@@ -437,6 +445,8 @@ export default function SubscribersTable() {
   const [mailingLabelsStatus, setMailingLabelsStatus] = useState(null);
   const [isLoadingDispatchList, setIsLoadingDispatchList] = useState(false);
   const [dispatchListStatus, setDispatchListStatus] = useState(null);
+  const [saveSubscriberStatus, setSaveSubscriberStatus] = useState(null);
+  const [deleteSubscriberStatus, setDeleteSubscriberStatus] = useState(null);
   const [deletedSubscriberIds, setDeletedSubscriberIds] = useState(new Set());
   const [deleteConfirmModalOpen, setDeleteConfirmModalOpen] = useState(false);
   const [pendingDeleteSubscriber, setPendingDeleteSubscriber] = useState(null);
@@ -463,6 +473,31 @@ export default function SubscribersTable() {
       setEditedSubscriber(subscriberDetails);
     }
   }, [subscriberDetails]);
+
+  React.useEffect(() => {
+    if (!saveSubscriberStatus) return undefined;
+    const timer = setTimeout(() => {
+      setSaveSubscriberStatus(null);
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [saveSubscriberStatus]);
+
+  React.useEffect(() => {
+    if (!deleteSubscriberStatus) return undefined;
+    const timer = setTimeout(() => {
+      setDeleteSubscriberStatus(null);
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [deleteSubscriberStatus]);
+
+  React.useEffect(() => {
+    if (!(saveSubscriberStatus?.type === 'success' && modalOpen)) return undefined;
+    const navigateTimer = setTimeout(() => {
+      setModalOpen(false);
+      setSelected(null);
+    }, 2500);
+    return () => clearTimeout(navigateTimer);
+  }, [saveSubscriberStatus, modalOpen]);
 
   const data = globalSearchQuery !== '' ? searchData : allData;
   const subscribers = data?.subscribers || [];
@@ -608,11 +643,28 @@ export default function SubscribersTable() {
   const handleSaveSubscriber = async () => {
     if (editedSubscriber) {
       try {
-        await updateSubscriber({ id: editedSubscriber.sub_id, ...editedSubscriber }).unwrap();
+        const updatedSubscriber = await updateSubscriber({ id: editedSubscriber.sub_id, ...editedSubscriber }).unwrap();
+        setSaveSubscriberStatus({
+          type: 'success',
+          message: 'Subscriber details updated successfully.'
+        });
+        if (updatedSubscriber) {
+          setEditedSubscriber(updatedSubscriber);
+          setSelected(updatedSubscriber);
+        }
         setIsEditingSubscriber(false);
         refetch();
+        if (globalSearchQuery !== '') {
+          refetchSearchSubscribers();
+        } else {
+          refetchAllSubscribers();
+        }
       } catch (err) {
         console.error('Failed to update subscriber:', err);
+        setSaveSubscriberStatus({
+          type: 'error',
+          message: 'Failed to update subscriber details. Please try again.'
+        });
       }
     }
   };
@@ -760,8 +812,16 @@ export default function SubscribersTable() {
         next.add(pendingDeleteSubscriber.sub_id);
         return next;
       });
+      setDeleteSubscriberStatus({
+        type: 'success',
+        message: 'Subscriber deleted successfully.'
+      });
     } catch (err) {
       console.error('Failed to delete subscriber:', err);
+      setDeleteSubscriberStatus({
+        type: 'error',
+        message: 'Failed to delete subscriber. Please try again.'
+      });
     } finally {
       setDeleteConfirmModalOpen(false);
       setPendingDeleteSubscriber(null);
@@ -1040,13 +1100,18 @@ export default function SubscribersTable() {
                   </FormGroup>
                 </FormGrid>
                 <SaveButtonContainer>
-                  <Button 
+                  <Button
                     onClick={handleSaveSubscriber}
                     disabled={isUpdatingSubscriber}
                   >
                     {isUpdatingSubscriber ? 'Saving...' : 'Update Subscriber Details'}
                   </Button>
                 </SaveButtonContainer>
+                {saveSubscriberStatus && (
+                  <StatusMessage success={saveSubscriberStatus.type === 'success'}>
+                    {saveSubscriberStatus.message}
+                  </StatusMessage>
+                )}
               </LeftPane>
               <RightPane>
                 {(() => {
@@ -1334,6 +1399,13 @@ export default function SubscribersTable() {
           if (refetch) refetch();
         }}
       />
+      {deleteSubscriberStatus && (
+        <FloatingNotificationWrap>
+          <StatusMessage success={deleteSubscriberStatus.type === 'success'}>
+            {deleteSubscriberStatus.message}
+          </StatusMessage>
+        </FloatingNotificationWrap>
+      )}
     </Container>
   );
 } 
