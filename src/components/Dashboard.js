@@ -195,6 +195,9 @@ export default function Dashboard() {
           <h2 style={{ margin: 0, color: 'var(--color-text)' }}>Dashboard</h2>
         </div>
         <Card>
+          <OperationalKPIs />
+        </Card>
+        <Card>
           <DashboardStats />
         </Card>
         <Card>
@@ -406,11 +409,6 @@ export default function Dashboard() {
                   </button>
                 </div>
               )}
-            </Card>
-          </div>
-          <div style={{ flex: '0 0 98px' }}>
-            <Card style={{ padding: '12px' }}>
-              <OperationalKPIs />
             </Card>
           </div>
         </div>
