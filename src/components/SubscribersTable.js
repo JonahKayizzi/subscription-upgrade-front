@@ -384,6 +384,37 @@ const HistoryTable = styled.table`
   }
 `;
 
+const DeleteConfirmContent = styled.div`
+  min-width: 380px;
+  max-width: 520px;
+  background: var(--color-background-card);
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+`;
+
+const DeleteConfirmTitle = styled.h3`
+  margin: 0;
+  font-size: 1.2rem;
+  color: var(--color-text);
+`;
+
+const DeleteConfirmText = styled.p`
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.95rem;
+  line-height: 1.5;
+`;
+
+const DeleteConfirmActions = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+`;
+
 export default function SubscribersTable() {
   const navigate = useNavigate();
   const globalSearchQuery = useSelector(state => state.search.query);
@@ -407,6 +438,8 @@ export default function SubscribersTable() {
   const [isLoadingDispatchList, setIsLoadingDispatchList] = useState(false);
   const [dispatchListStatus, setDispatchListStatus] = useState(null);
   const [deletedSubscriberIds, setDeletedSubscriberIds] = useState(new Set());
+  const [deleteConfirmModalOpen, setDeleteConfirmModalOpen] = useState(false);
+  const [pendingDeleteSubscriber, setPendingDeleteSubscriber] = useState(null);
   const { data: subscriberDetails, isLoading: isLoadingDetails, refetch } = useGetSubscriberQuery(selected?.sub_id, { skip: !selected });
   const { data: annualReportData, isLoading: isReportLoading } = useGetAnnualSubscriptionReportQuery();
   const { data: notificationsData, isLoading: isLoadingNotifications } = useGetNotificationsQuery();
@@ -713,18 +746,25 @@ export default function SubscribersTable() {
     }));
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this subscriber?')) {
-      try {
-        await deleteSubscriber(id).unwrap();
-        setDeletedSubscriberIds(prev => {
-          const next = new Set(prev);
-          next.add(id);
-          return next;
-        });
-      } catch (err) {
-        console.error('Failed to delete subscriber:', err);
-      }
+  const handleDelete = (subscriber) => {
+    setPendingDeleteSubscriber(subscriber);
+    setDeleteConfirmModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!pendingDeleteSubscriber?.sub_id) return;
+    try {
+      await deleteSubscriber(pendingDeleteSubscriber.sub_id).unwrap();
+      setDeletedSubscriberIds(prev => {
+        const next = new Set(prev);
+        next.add(pendingDeleteSubscriber.sub_id);
+        return next;
+      });
+    } catch (err) {
+      console.error('Failed to delete subscriber:', err);
+    } finally {
+      setDeleteConfirmModalOpen(false);
+      setPendingDeleteSubscriber(null);
     }
   };
 
@@ -790,7 +830,7 @@ export default function SubscribersTable() {
                     </td>
                     <td style={{ padding: 12, textAlign: 'left', display: 'flex', gap: 8 }}>
                       <Button style={{ width: '50%', minWidth: 0, padding: '4px 12px', fontSize: 14 }} onClick={() => handleView(sub)}>View</Button>
-                      <Button style={{ width: '50%', minWidth: 0, padding: '4px 12px', fontSize: 14, background: 'var(--color-error)', color: '#fff' }} onClick={() => handleDelete(sub.sub_id)}>Delete</Button>
+                      <Button style={{ width: '50%', minWidth: 0, padding: '4px 12px', fontSize: 14, background: 'var(--color-error)', color: '#fff' }} onClick={() => handleDelete(sub)}>Delete</Button>
                     </td>
                   </tr>
                 ))}
@@ -930,7 +970,7 @@ export default function SubscribersTable() {
                 <span style={{ color: 'var(--color-text)' }}>{sub.sub_name} ({sub.lag_days} days)</span>
                 <Button 
                   style={{ width: '50%', minWidth: 0, padding: '4px 10px', fontSize: 13, background: 'var(--color-error)', color: '#fff' }}
-                  onClick={() => handleDelete(sub.sub_id)}
+                  onClick={() => handleDelete(sub)}
                 >
                   Delete
                 </Button>
@@ -1247,6 +1287,41 @@ export default function SubscribersTable() {
         ) : (
           <ModalContentWrapper>Error loading details.</ModalContentWrapper>
         )}
+      </Modal>
+
+      <Modal
+        isOpen={deleteConfirmModalOpen}
+        onClose={() => {
+          setDeleteConfirmModalOpen(false);
+          setPendingDeleteSubscriber(null);
+        }}
+      >
+        <DeleteConfirmContent>
+          <DeleteConfirmTitle>Delete Subscriber</DeleteConfirmTitle>
+          <DeleteConfirmText>
+            Are you sure you want to delete{' '}
+            <strong>{pendingDeleteSubscriber?.sub_name || 'this subscriber'}</strong>? This action cannot be undone.
+          </DeleteConfirmText>
+          <DeleteConfirmActions>
+            <Button
+              type="button"
+              style={{ background: 'transparent', border: '1px solid var(--color-border)', color: 'var(--color-text)' }}
+              onClick={() => {
+                setDeleteConfirmModalOpen(false);
+                setPendingDeleteSubscriber(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              style={{ background: 'var(--color-error)', color: '#fff' }}
+              onClick={handleConfirmDelete}
+            >
+              Delete
+            </Button>
+          </DeleteConfirmActions>
+        </DeleteConfirmContent>
       </Modal>
 
       {/* Admin Subscription Request Modal */}
