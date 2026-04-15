@@ -14,6 +14,13 @@ const Title = styled.h4`
   margin: 0;
 `;
 
+const Subtitle = styled.p`
+  margin: 0 0 10px 0;
+  color: var(--color-text-muted);
+  font-size: 0.78rem;
+  line-height: 1.35;
+`;
+
 const ProgressBar = styled.div`
   width: 100%;
   height: 6px;
@@ -81,7 +88,25 @@ const Value = styled.div`
   font-size: 1.25rem;
 `;
 
+const ToggleButton = styled.button`
+  width: 100%;
+  margin-top: 6px;
+  margin-bottom: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+`;
+
 export default function OperationalKPIs() {
+  const [isExpanded, setIsExpanded] = React.useState(false);
   const token = useSelector(state => state.auth.token);
   const { data, error, isLoading } = useGetDashboardStatsQuery(undefined, { skip: !token });
 
@@ -96,71 +121,80 @@ export default function OperationalKPIs() {
   return (
     <div>
       <Header>
-        <Title>Task Overview</Title>
+        <Title>Admin Action Queue</Title>
       </Header>
+      <Subtitle>
+        Prioritize invoice uploads and receipt verification, then complete pending subscription activations.
+      </Subtitle>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <div style={{ color: 'var(--color-success)', fontWeight: 700 }}>{completePct}%</div>
-        <div style={{ color: 'var(--color-text-muted)' }}>Complete</div>
+        <div style={{ color: 'var(--color-text-muted)' }}>Queue Completion</div>
       </div>
       <ProgressBar>
         <Progress value={completePct} />
       </ProgressBar>
-      <List>
-        <Item>
-          <Left>
-            <Badge bg="rgba(99, 102, 241, 0.15)">📋</Badge>
-            <Texts>
-              <Value>{totalOps + completedOps}</Value>
-              <Label>Total Tasks</Label>
-            </Texts>
-          </Left>
-        </Item>
-        <Item>
-          <Left>
-            <Badge bg="rgba(16, 185, 129, 0.15)">✅</Badge>
-            <Texts>
-              <Value>{completedOps}</Value>
-              <Label>Completed</Label>
-            </Texts>
-          </Left>
-        </Item>
-        <Item>
-          <Left>
-            <Badge bg="rgba(250, 204, 21, 0.2)">🕒</Badge>
-            <Texts>
-              <Value>{data.pending_subscriptions || 0}</Value>
-              <Label>Pending</Label>
-            </Texts>
-          </Left>
-        </Item>
-        <Item>
-          <Left>
-            <Badge bg="rgba(167, 139, 250, 0.2)">📅</Badge>
-            <Texts>
-              <Value>{data.pipeline?.receipts_pending_verification || 0}</Value>
-              <Label>Pending Receipts</Label>
-            </Texts>
-          </Left>
-        </Item>
-        <Item>
-          <Left>
-            <Badge bg="rgba(59, 130, 246, 0.2)">📨</Badge>
-            <Texts>
-              <Value>{data.pipeline?.invoices_pending_upload || 0}</Value>
-              <Label>Pending Invoices</Label>
-            </Texts>
-          </Left>
-        </Item>
-        <Item>
-          <Left>
-            <Badge bg="rgba(250, 204, 21, 0.25)">⚠</Badge>
-            <Texts>
-              <Value>{(data.expiring_buckets?.days_7 || 0) + (data.expiring_buckets?.days_30 || 0) + (data.expiring_buckets?.days_90 || 0)}</Value>
-              <Label>Expiring in 7/30/90 days</Label>
-            </Texts>
-          </Left>
-        </Item>
-      </List>
+      <ToggleButton type="button" onClick={() => setIsExpanded(prev => !prev)}>
+        <span>{isExpanded ? 'Hide queue details' : 'Show queue details'}</span>
+        <span>{isExpanded ? '▴' : '▾'}</span>
+      </ToggleButton>
+      {isExpanded && (
+        <List>
+          <Item>
+            <Left>
+              <Badge bg="rgba(99, 102, 241, 0.15)">📋</Badge>
+              <Texts>
+                <Value>{totalOps + completedOps}</Value>
+                <Label>Total Queue Items</Label>
+              </Texts>
+            </Left>
+          </Item>
+          <Item>
+            <Left>
+              <Badge bg="rgba(16, 185, 129, 0.15)">✅</Badge>
+              <Texts>
+                <Value>{completedOps}</Value>
+                <Label>Completed Activations</Label>
+              </Texts>
+            </Left>
+          </Item>
+          <Item>
+            <Left>
+              <Badge bg="rgba(250, 204, 21, 0.2)">🕒</Badge>
+              <Texts>
+                <Value>{data.pending_subscriptions || 0}</Value>
+                <Label>Pending Subscriptions to Process</Label>
+              </Texts>
+            </Left>
+          </Item>
+          <Item>
+            <Left>
+              <Badge bg="rgba(167, 139, 250, 0.2)">📅</Badge>
+              <Texts>
+                <Value>{data.pipeline?.receipts_pending_verification || 0}</Value>
+                <Label>Receipts Awaiting Verification</Label>
+              </Texts>
+            </Left>
+          </Item>
+          <Item>
+            <Left>
+              <Badge bg="rgba(59, 130, 246, 0.2)">📨</Badge>
+              <Texts>
+                <Value>{data.pipeline?.invoices_pending_upload || 0}</Value>
+                <Label>Invoices Awaiting Upload</Label>
+              </Texts>
+            </Left>
+          </Item>
+          <Item>
+            <Left>
+              <Badge bg="rgba(250, 204, 21, 0.25)">⚠</Badge>
+              <Texts>
+                <Value>{(data.expiring_buckets?.days_7 || 0) + (data.expiring_buckets?.days_30 || 0) + (data.expiring_buckets?.days_90 || 0)}</Value>
+                <Label>Subscriptions Expiring in 7/30/90 Days</Label>
+              </Texts>
+            </Left>
+          </Item>
+        </List>
+      )}
     </div>
   );
 }
